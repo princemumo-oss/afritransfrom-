@@ -147,6 +147,15 @@ export type Initiative = {
     submittedBy?: string;
     subscribers?: string[]; // Array of user IDs
 }
+
+export type InitiativeMessage = {
+    senderId: string;
+    senderName: string;
+    senderAvatarUrl?: string;
+    content: string;
+    createdAt: any; // Firestore timestamp
+};
+
 export const sampleReels: Reel[] = [
   {
     id: '1',
@@ -173,3 +182,5 @@ export const sampleReels: Reel[] = [
     comments: 101,
   },
 ];
+
+    

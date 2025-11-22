@@ -339,6 +339,37 @@
         }
       },
       "required": ["name", "description", "logoUrl", "submittedBy", "status", "createdAt"]
+    },
+     "InitiativeMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InitiativeMessage",
+      "type": "object",
+      "description": "Represents a chat message within an initiative's community chat.",
+      "properties": {
+        "senderId": {
+          "type": "string",
+          "description": "The ID of the user who sent the message."
+        },
+        "senderName": {
+          "type": "string",
+          "description": "The name of the user who sent the message."
+        },
+        "senderAvatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The avatar URL of the user who sent the message."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the message was sent."
+        }
+      },
+      "required": ["senderId", "senderName", "content", "createdAt"]
     }
   },
   "auth": {
@@ -503,8 +534,30 @@
             }
           ]
         }
+      },
+      {
+        "path": "/initiatives/{initiativeId}/messages/{messageId}",
+        "definition": {
+          "entityName": "InitiativeMessage",
+          "schema": {
+            "$ref": "#/backend/entities/InitiativeMessage"
+          },
+          "description": "Stores chat messages for a specific initiative. Only the owner and subscribers can read/write.",
+          "params": [
+            {
+              "name": "initiativeId",
+              "description": "The unique identifier for the initiative."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. A `calls` collection is added to handle WebRTC signaling for video and voice calls. A new `initiatives` collection is added to handle user submissions, with a `status` field to manage an approval workflow."
   }
 }
+
+    

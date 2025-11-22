@@ -49,5 +49,18 @@ service cloud.firestore {
       allow update: if request.auth != null; // Allow logged in users to subscribe/unsubscribe
       allow delete: if false;
     }
+
+    match /initiatives/{initiativeId}/messages/{messageId} {
+      function isInitiativeOwner() {
+        return request.auth != null && get(/databases/$(database)/documents/initiatives/$(initiativeId)).data.submittedBy == request.auth.uid;
+      }
+      function isSubscriber() {
+        return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/initiatives/$(initiativeId)).data.subscribers;
+      }
+      allow read: if isInitiativeOwner() || isSubscriber();
+      allow create: if (isInitiativeOwner() || isSubscriber()) && request.resource.data.senderId == request.auth.uid;
+    }
   }
 }
+
+    
