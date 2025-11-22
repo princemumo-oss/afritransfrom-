@@ -18,12 +18,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
+const emojiSet = ['😀', '😂', '😍', '🤔', '👋', '🎉', '🔥', '👍', '❤️', '🙏', '💯', '🤣'];
 
 
 export default function MessagesPage() {
     const currentUser = users.find(u => u.name === 'You');
     const [conversations, setConversations] = useState(initialConversations);
     const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
+    const [newMessage, setNewMessage] = useState('');
 
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
     const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
@@ -70,6 +72,41 @@ export default function MessagesPage() {
             setSelectedConversation(updatedSelectedConvo);
         }
       };
+    
+    const handleSendMessage = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !currentUser) return;
+
+        const message: Message = {
+            id: `m${Date.now()}`,
+            sender: currentUser,
+            content: newMessage,
+            timestamp: 'Just now'
+        };
+
+        const updatedConversations = conversations.map(convo => {
+            if (convo.id === selectedConversation.id) {
+                return {
+                    ...convo,
+                    messages: [...convo.messages, message],
+                    lastMessage: newMessage,
+                    lastMessageTimestamp: 'Just now',
+                };
+            }
+            return convo;
+        });
+
+        setConversations(updatedConversations);
+        const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
+        if (updatedSelectedConvo) {
+            setSelectedConversation(updatedSelectedConvo);
+        }
+        setNewMessage('');
+    };
+
+    const addEmoji = (emoji: string) => {
+        setNewMessage(prev => prev + emoji);
+    };
 
     return (
         <MainLayout>
@@ -210,12 +247,36 @@ export default function MessagesPage() {
                         </div>
                     </CardContent>
                     <div className="border-t p-4">
-                        <form className="relative">
-                            <Input placeholder="Type a message..." className="pr-20 rounded-full" />
-                            <Button type="button" variant="ghost" size="icon" className="absolute right-12 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
-                                <Smile className="h-5 w-5" />
-                            </Button>
-                            <Button type="submit" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full">
+                        <form onSubmit={handleSendMessage} className="relative">
+                            <Input
+                                placeholder="Type a message..."
+                                className="pr-20 rounded-full"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                            />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button type="button" variant="ghost" size="icon" className="absolute right-12 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
+                                        <Smile className="h-5 w-5" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-fit p-1">
+                                    <div className="grid grid-cols-6 gap-1">
+                                        {emojiSet.map(emoji => (
+                                            <Button
+                                                key={emoji}
+                                                variant="ghost"
+                                                size="icon"
+                                                className="rounded-full text-lg"
+                                                onClick={() => addEmoji(emoji)}
+                                            >
+                                                {emoji}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            <Button type="submit" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" disabled={!newMessage.trim()}>
                                 <Send className="h-4 w-4" />
                             </Button>
                         </form>
