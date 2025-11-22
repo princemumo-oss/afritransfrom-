@@ -10,6 +10,22 @@ export type User = {
   name: string;
   avatarUrl: string;
   bio: string;
+  location?: string;
+  work?: {
+    company: string;
+    position: string;
+  };
+  education?: {
+    school: string;
+    degree: string;
+  };
+  website?: string;
+  relationshipStatus?: 'Single' | 'In a relationship' | 'Engaged' | 'Married' | 'Complicated';
+  hobbies?: string[];
+  family?: {
+    relation: string;
+    name: string;
+  }[];
 };
 
 export type Post = {
@@ -52,11 +68,65 @@ export type Notification = {
 };
 
 export const users: User[] = [
-  { id: '1', name: 'Alice', avatarUrl: imageMap.get('avatar-1')!.imageUrl, bio: 'Software Engineer and cat lover.' },
-  { id: '2', name: 'Bob', avatarUrl: imageMap.get('avatar-2')!.imageUrl, bio: 'Designer, photographer, and coffee enthusiast.' },
-  { id: '3', name: 'Charlie', avatarUrl: imageMap.get('avatar-3')!.imageUrl, bio: 'Just a dude who loves hiking.' },
-  { id: '4', name: 'Diana', avatarUrl: imageMap.get('avatar-4')!.imageUrl, bio: 'Exploring the world one city at a time.' },
-  { id: '5', name: 'You', avatarUrl: imageMap.get('avatar-5')!.imageUrl, bio: 'This is your bio. You can edit it!' },
+  { 
+    id: '1', 
+    name: 'Alice', 
+    avatarUrl: imageMap.get('avatar-1')!.imageUrl, 
+    bio: 'Software Engineer and cat lover.',
+    location: 'Nairobi, Kenya',
+    work: { company: 'TechNova', position: 'Senior Developer' },
+    education: { school: 'University of Cape Town', degree: 'Computer Science' },
+    website: 'https://alice.dev',
+    relationshipStatus: 'In a relationship',
+    hobbies: ['Coding', 'Reading', 'Cats'],
+    family: [{ relation: 'Brother', name: 'Alex' }]
+  },
+  { 
+    id: '2', 
+    name: 'Bob', 
+    avatarUrl: imageMap.get('avatar-2')!.imageUrl, 
+    bio: 'Designer, photographer, and coffee enthusiast.',
+    location: 'Lagos, Nigeria',
+    work: { company: 'Creative Minds', position: 'Lead Designer' },
+    education: { school: 'Yaba College of Technology', degree: 'Graphic Design' },
+    relationshipStatus: 'Single',
+    hobbies: ['Photography', 'Latte Art', 'Traveling']
+  },
+  { 
+    id: '3', 
+    name: 'Charlie', 
+    avatarUrl: imageMap.get('avatar-3')!.imageUrl, 
+    bio: 'Just a dude who loves hiking.',
+    location: 'Cape Town, South Africa',
+    work: { company: 'Adventure Co.', position: 'Tour Guide' },
+    education: { school: 'Stellenbosch University', degree: 'Environmental Science' },
+    relationshipStatus: 'Married',
+    hobbies: ['Hiking', 'Camping', 'Kayaking']
+  },
+  { 
+    id: '4', 
+    name: 'Diana', 
+    avatarUrl: imageMap.get('avatar-4')!.imageUrl, 
+    bio: 'Exploring the world one city at a time.',
+    location: 'Accra, Ghana',
+    work: { company: 'Globe Trotters', position: 'Travel Blogger' },
+    education: { school: 'University of Ghana', degree: 'Journalism' },
+    website: 'https://dianatravels.com',
+    relationshipStatus: 'Single',
+    hobbies: ['Blogging', 'Photography', 'Trying new foods']
+  },
+  { 
+    id: '5', 
+    name: 'You', 
+    avatarUrl: imageMap.get('avatar-5')!.imageUrl, 
+    bio: 'This is your bio. You can edit it!',
+    location: 'Cairo, Egypt',
+    work: { company: 'My Company', position: 'My Role' },
+    education: { school: 'My University', degree: 'My Degree' },
+    website: 'https://my-website.com',
+    relationshipStatus: 'Single',
+    hobbies: ['Next.js', 'React', 'Tailwind CSS'],
+  },
 ];
 
 export const posts: Post[] = [
