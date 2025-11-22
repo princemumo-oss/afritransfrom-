@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Message, type Conversation, type User } from '@/lib/data';
-import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming } from 'lucide-react';
+import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
@@ -19,6 +19,7 @@ import { VoiceNotePlayer } from '@/components/voice-note-player';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
 import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
+import { NewChatDialog } from '@/components/new-chat-dialog';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -41,6 +42,8 @@ export default function MessagesPage() {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const recordingStartTimeRef = useRef<number | null>(null);
+    
+    const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
     // WebRTC state
     const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -286,10 +289,18 @@ export default function MessagesPage() {
                     </Card>
                 </div>
             )}
+             <NewChatDialog
+                open={isNewChatOpen}
+                onOpenChange={setIsNewChatOpen}
+                onConversationSelect={setSelectedConversation}
+            />
             <div className="grid h-[calc(100vh-8rem)] w-full grid-cols-1 gap-6 md:grid-cols-[300px_1fr]">
                 <Card className="flex-col md:flex hidden">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Messages</CardTitle>
+                        <Button variant="ghost" size="icon" onClick={() => setIsNewChatOpen(true)}>
+                            <Plus className="h-5 w-5" />
+                        </Button>
                     </CardHeader>
                     <CardContent className="flex-1 p-0">
                         <ScrollArea className="h-full">
