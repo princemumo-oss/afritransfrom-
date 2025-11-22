@@ -145,7 +145,7 @@ export default function ChatbotPage() {
                         Your personal AI to talk about anything and everything.
                     </p>
                 </div>
-                <audio ref={audioRef} src={audioUrl || ''} onEnded={handleAudioEnded} />
+                <audio ref={audioRef} src={audioUrl || undefined} onEnded={handleAudioEnded} />
                 <Card className="flex flex-col h-[calc(100vh-16rem)]">
                     <CardContent className="flex-1 p-0 flex flex-col">
                         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
