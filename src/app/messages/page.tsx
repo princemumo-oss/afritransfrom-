@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { conversations as initialConversations, users, type Message, type Conversation, type User } from '@/lib/data';
+import { type Message, type Conversation, type User } from '@/lib/data';
 import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -15,9 +16,9 @@ import { translateText } from '@/ai/flows/translate-text';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VoiceNotePlayer } from '@/components/voice-note-player';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy } from 'firebase/firestore';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -27,9 +28,9 @@ const emojiSet = ['😀', '😂', '😍', '🤔', '👋', '🎉', '🔥', '👍'
 export default function MessagesPage() {
     const { user: firebaseUser } = useUser();
     const firestore = useFirestore();
-    const currentUser = users.find(u => u.id === firebaseUser?.uid) || users.find(u => u.name === 'You');
-    const [conversations, setConversations] = useState(initialConversations);
-    const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
+    
+    const [conversations, setConversations] = useState<any[]>([]);
+    const [selectedConversation, setSelectedConversation] = useState<any>(null);
     const [newMessage, setNewMessage] = useState('');
 
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
@@ -44,20 +45,62 @@ export default function MessagesPage() {
     // WebRTC state
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
-    const { startCall, joinCall, hangUp, localStream, remoteStream, isInCall, toggleMute, toggleVideo } = useWebRTC(localVideoRef, remoteVideoRef, currentUser?.id);
+    const { startCall, joinCall, hangUp, localStream, remoteStream, isInCall, toggleMute, toggleVideo } = useWebRTC(localVideoRef, remoteVideoRef, firebaseUser?.uid);
     const [isMicMuted, setIsMicMuted] = useState(false);
     const [isVideoMuted, setIsVideoMuted] = useState(false);
     const [incomingCall, setIncomingCall] = useState<{ callId: string; from: User } | null>(null);
+    
+    const currentUserProfileQuery = useMemoFirebase(() => firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null, [firestore, firebaseUser]);
+    const {data: currentUser} = useDoc<User>(currentUserProfileQuery);
 
     const callsCollection = useMemoFirebase(() => collection(firestore, 'calls'), [firestore]);
+
+     // Fetch conversations for the current user
+    const conversationsQuery = useMemoFirebase(() => 
+        firebaseUser ? query(collection(firestore, 'chats'), where('members', 'array-contains', firebaseUser.uid)) : null,
+        [firestore, firebaseUser]
+    );
+    const { data: conversationDocs, isLoading: isLoadingConversations } = useCollection(conversationsQuery);
+
+     useEffect(() => {
+        if (!conversationDocs || !firebaseUser) return;
+        
+        const fetchParticipants = async () => {
+            const convos = await Promise.all(
+                conversationDocs.map(async (convo) => {
+                    const participantId = convo.members.find((id: string) => id !== firebaseUser.uid);
+                    if (!participantId) return null;
+                    const userRef = doc(firestore, 'users', participantId);
+                    const userSnap = await getDoc(userRef);
+                    return { ...convo, participant: userSnap.data() };
+                })
+            );
+            const validConvos = convos.filter(Boolean);
+            setConversations(validConvos);
+            if (!selectedConversation && validConvos.length > 0) {
+                setSelectedConversation(validConvos[0]);
+            }
+        };
+
+        fetchParticipants();
+
+    }, [conversationDocs, firebaseUser, selectedConversation]);
+
+    // Fetch messages for the selected conversation
+    const messagesQuery = useMemoFirebase(() => 
+        selectedConversation ? query(collection(firestore, 'chats', selectedConversation.id, 'messages'), orderBy('createdAt', 'asc')) : null,
+        [selectedConversation]
+    );
+    const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
+
 
     useEffect(() => {
         if (!currentUser || !callsCollection) return;
 
         const q = query(callsCollection, where("answer", "==", null));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+            for (const change of snapshot.docChanges()) {
                 if (change.type === "added") {
                     const callData = change.doc.data();
                     const offererId = callData.offer.uid;
@@ -65,14 +108,16 @@ export default function MessagesPage() {
                     if (offererId !== currentUser.id) {
                        const participantInCall = conversations.some(c => c.participant.id === offererId);
                        if (participantInCall) {
-                         const fromUser = users.find(u => u.id === offererId);
+                         const userRef = doc(firestore, 'users', offererId);
+                         const userSnap = await getDoc(userRef);
+                         const fromUser = userSnap.data() as User;
                          if (fromUser) {
                              setIncomingCall({ callId: change.doc.id, from: fromUser });
                          }
                        }
                     }
                 }
-            });
+            }
         });
 
         return () => unsubscribe();
@@ -95,7 +140,7 @@ export default function MessagesPage() {
         await startCall(selectedConversation.participant.id);
         toast({
             title: 'Calling...',
-            description: `Calling ${selectedConversation.participant.name}.`,
+            description: `Calling ${selectedConversation.participant.firstName}.`,
         });
     };
     
@@ -146,55 +191,20 @@ export default function MessagesPage() {
       };
 
       const handleReaction = (messageId: string, reaction: string) => {
-        const updatedConversations = conversations.map(convo => {
-          if (convo.id === selectedConversation.id) {
-            const updatedMessages = convo.messages.map(msg => {
-              if (msg.id === messageId) {
-                // Toggle reaction
-                const newReaction = msg.reaction === reaction ? undefined : reaction;
-                return { ...msg, reaction: newReaction };
-              }
-              return msg;
-            });
-            return { ...convo, messages: updatedMessages };
-          }
-          return convo;
-        });
-        setConversations(updatedConversations);
-        
-        const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
-        if (updatedSelectedConvo) {
-            setSelectedConversation(updatedSelectedConvo);
-        }
+        // Firestore update logic for reaction would go here
       };
     
-    const sendMessage = (message: Omit<Message, 'id' | 'sender' | 'timestamp'>) => {
-      if (!currentUser) return;
+    const sendMessage = async (message: { content?: string, audioUrl?: string, audioDuration?: number }) => {
+      if (!firebaseUser || !selectedConversation) return;
 
-      const finalMessage: Message = {
+      const messagesCol = collection(firestore, 'chats', selectedConversation.id, 'messages');
+      
+      await addDoc(messagesCol, {
           ...message,
-          id: `m${Date.now()}`,
-          sender: currentUser,
-          timestamp: 'Just now'
-      };
-
-      const updatedConversations = conversations.map(convo => {
-          if (convo.id === selectedConversation.id) {
-              return {
-                  ...convo,
-                  messages: [...convo.messages, finalMessage],
-                  lastMessage: finalMessage.audioUrl ? 'Voice Note' : finalMessage.content,
-                  lastMessageTimestamp: 'Just now',
-              };
-          }
-          return convo;
+          senderId: firebaseUser.uid,
+          createdAt: serverTimestamp()
       });
 
-      setConversations(updatedConversations);
-      const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
-      if (updatedSelectedConvo) {
-          setSelectedConversation(updatedSelectedConvo);
-      }
       setNewMessage('');
     }
 
@@ -223,8 +233,9 @@ export default function MessagesPage() {
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const duration = recordingStartTimeRef.current ? (Date.now() - recordingStartTimeRef.current) / 1000 : 0;
                 
+                // Here you would upload the blob to Firebase Storage and get a URL
+                // For now, we'll use the local blob URL which will only work on this client
                 sendMessage({
-                    content: '',
                     audioUrl,
                     audioDuration: Math.round(duration)
                 });
@@ -255,6 +266,10 @@ export default function MessagesPage() {
         }
     };
 
+    if (!currentUser) {
+        return <MainLayout><div className="flex items-center justify-center h-full">Loading...</div></MainLayout>
+    }
+
     return (
         <MainLayout>
              {incomingCall && (
@@ -262,10 +277,10 @@ export default function MessagesPage() {
                     <Card className="p-6 text-center">
                         <Avatar className="w-24 h-24 mx-auto mb-4">
                             <AvatarImage src={incomingCall.from.avatarUrl} />
-                            <AvatarFallback>{incomingCall.from.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{incomingCall.from.firstName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <CardTitle>Incoming Call</CardTitle>
-                        <CardDescription className="mb-6">{incomingCall.from.name} is calling...</CardDescription>
+                        <CardDescription className="mb-6">{incomingCall.from.firstName} is calling...</CardDescription>
                         <div className="flex gap-4 justify-center">
                             <Button variant="destructive" onClick={() => setIncomingCall(null)}>Decline</Button>
                             <Button className="bg-green-500 hover:bg-green-600" onClick={handleAnswerCall}>Accept</Button>
@@ -281,23 +296,24 @@ export default function MessagesPage() {
                     <CardContent className="flex-1 p-0">
                         <ScrollArea className="h-full">
                             <div className="flex flex-col gap-1 p-2">
+                                {isLoadingConversations && <p className="text-center text-muted-foreground p-4">Loading...</p>}
                                 {conversations.map(convo => (
                                     <button
                                         key={convo.id}
                                         onClick={() => setSelectedConversation(convo)}
-                                        className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-all hover:bg-accent', convo.id === selectedConversation.id ? 'bg-accent text-accent-foreground' : '')}
+                                        className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-all hover:bg-accent', selectedConversation?.id === convo.id ? 'bg-accent text-accent-foreground' : '')}
                                     >
                                         <div className="relative">
                                             <Avatar className="h-10 w-10">
-                                                <AvatarImage src={convo.participant.avatarUrl} alt={convo.participant.name} />
-                                                <AvatarFallback>{convo.participant.name.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={convo.participant.avatarUrl} alt={convo.participant.firstName} />
+                                                <AvatarFallback>{convo.participant.firstName.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                              {convo.participant.onlineStatus === 'online' && (
                                                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full border-2 border-card bg-green-500" />
                                             )}
                                         </div>
                                         <div className="flex-1 truncate">
-                                            <div className="font-semibold">{convo.participant.name}</div>
+                                            <div className="font-semibold">{convo.participant.firstName} {convo.participant.lastName}</div>
                                             <div className="text-sm text-muted-foreground">{convo.lastMessage}</div>
                                         </div>
                                         <div className="text-xs text-muted-foreground">{convo.lastMessageTimestamp}</div>
@@ -308,19 +324,20 @@ export default function MessagesPage() {
                     </CardContent>
                 </Card>
 
+                {selectedConversation ? (
                 <Card className="flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between border-b p-4">
                          <div className="flex items-center gap-3">
                              <div className="relative">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.name} />
-                                    <AvatarFallback>{selectedConversation.participant.name.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.firstName} />
+                                    <AvatarFallback>{selectedConversation.participant.firstName.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                  {selectedConversation.participant.onlineStatus === 'online' && (
                                     <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full border-2 border-card bg-green-500" />
                                 )}
                             </div>
-                            <div className="font-semibold">{selectedConversation.participant.name}</div>
+                            <div className="font-semibold">{selectedConversation.participant.firstName} {selectedConversation.participant.lastName}</div>
                         </div>
                         {!isInCall && (
                              <div className="flex items-center gap-2">
@@ -343,7 +360,7 @@ export default function MessagesPage() {
                                 </div>
                                 <div className="bg-background relative">
                                     <video ref={remoteVideoRef} autoPlay className="w-full h-full object-cover" />
-                                    <div className="absolute bottom-2 left-2 text-white bg-black/50 px-2 py-1 rounded-md text-sm">{selectedConversation.participant.name}</div>
+                                    <div className="absolute bottom-2 left-2 text-white bg-black/50 px-2 py-1 rounded-md text-sm">{selectedConversation.participant.firstName}</div>
                                 </div>
                             </div>
                              <CardFooter className="flex justify-center gap-4 p-4 border-t">
@@ -362,16 +379,17 @@ export default function MessagesPage() {
                     <>
                         <CardContent className="flex-1 overflow-y-auto p-4">
                             <div className="space-y-6">
-                                {selectedConversation.messages.map(message => (
-                                    <div key={message.id} className={cn('group relative flex items-start gap-3', message.sender.id === currentUser?.id ? 'justify-end' : '')}>
-                                        {message.sender.id !== currentUser?.id && (
+                                {isLoadingMessages && <p className='text-center text-muted-foreground'>Loading messages...</p>}
+                                {messages?.map(message => (
+                                    <div key={message.id} className={cn('group relative flex items-start gap-3', message.senderId === currentUser?.id ? 'justify-end' : '')}>
+                                        {message.senderId !== currentUser?.id && (
                                             <Avatar className="h-8 w-8">
-                                                <AvatarImage src={message.sender.avatarUrl} alt={message.sender.name} />
-                                                <AvatarFallback>{message.sender.name.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.firstName} />
+                                                <AvatarFallback>{selectedConversation.participant.firstName.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                         )}
                                         <div className="relative">
-                                            <div className={cn('max-w-xs rounded-lg p-3 lg:max-w-md', message.sender.id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
+                                            <div className={cn('max-w-xs rounded-lg p-3 lg:max-w-md', message.senderId === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                                             {message.audioUrl ? (
                                                     <VoiceNotePlayer src={message.audioUrl} duration={message.audioDuration ?? 0} />
                                             ) : (
@@ -391,7 +409,7 @@ export default function MessagesPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className={cn("absolute bottom-1 opacity-0 transition-opacity group-hover:opacity-100", message.sender.id === currentUser?.id ? "left-0 -translate-x-full" : "right-0 translate-x-full")}>
+                                            <div className={cn("absolute bottom-1 opacity-0 transition-opacity group-hover:opacity-100", message.senderId === currentUser?.id ? "left-0 -translate-x-full" : "right-0 translate-x-full")}>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground">
@@ -440,10 +458,10 @@ export default function MessagesPage() {
                                                 </DropdownMenu>
                                             </div>
                                         </div>
-                                        {message.sender.id === currentUser?.id && (
+                                        {message.senderId === currentUser?.id && (
                                             <Avatar className="h-8 w-8">
-                                                <AvatarImage src={message.sender.avatarUrl} alt={message.sender.name} />
-                                                <AvatarFallback>{message.sender.name.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.firstName} />
+                                                <AvatarFallback>{currentUser.firstName.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                         )}
                                     </div>
@@ -506,6 +524,11 @@ export default function MessagesPage() {
                     </>
                     )}
                 </Card>
+                ) : (
+                    <Card className="flex items-center justify-center">
+                        <p className="text-muted-foreground">Select a conversation to start messaging.</p>
+                    </Card>
+                )}
             </div>
         </MainLayout>
     );

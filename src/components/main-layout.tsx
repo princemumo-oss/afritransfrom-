@@ -1,11 +1,13 @@
 
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import type { User } from '@/lib/data';
 
 import {
   Sidebar,
@@ -23,21 +25,23 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { users } from '@/lib/data';
 import type { Notification } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { QrScannerDialog } from './qr-scanner-dialog';
+import { doc } from 'firebase/firestore';
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-  const currentUserData = users.find(u => u.name === 'You'); // Mock data
-
+  const firestore = useFirestore();
+  const { user: authUser, isUserLoading } = useUser();
+  const currentUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [firestore, authUser]);
+  const { data: currentUserData, isLoading: isCurrentUserLoading } = useDoc<User>(currentUserDocRef);
+  
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const { toast } = useToast();
@@ -45,14 +49,15 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && !authUser) {
       router.replace('/login');
     }
-  }, [isUserLoading, user, router]);
+  }, [isUserLoading, authUser, router]);
 
   useEffect(() => {
-    // In a real app, you'd fetch this from an API
-    import('@/lib/data').then(data => setNotifications(data.notifications));
+    // In a real app, you'd fetch this from a Firestore collection
+    // For now, we'll keep it empty since mock data is removed.
+    setNotifications([]);
   }, []);
   
   // Close mobile sidebar on navigation
@@ -125,7 +130,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !authUser || isCurrentUserLoading) {
     return (
         <div className="flex min-h-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin" />
@@ -194,10 +199,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 <SidebarMenuButton asChild tooltip="Profile" isActive={pathname.startsWith('/profile')}>
                     <Link href="/profile/me">
                         {currentUserData && <Avatar className="h-7 w-7">
-                            <AvatarImage src={currentUserData.avatarUrl} alt={currentUserData.name} />
-                            <AvatarFallback>{currentUserData.name.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={currentUserData.avatarUrl} alt={currentUserData.firstName} />
+                            <AvatarFallback>{currentUserData.firstName?.charAt(0)}</AvatarFallback>
                         </Avatar>}
-                        <span className="truncate">{user.displayName || 'Profile'}</span>
+                        <span className="truncate">{authUser.displayName || 'Profile'}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -261,7 +266,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           </div>
                           <div className="text-sm">
                               <p>
-                                  <span className="font-semibold">{notification.user.name}</span>
+                                  <span className="font-semibold">{notification.user.firstName}</span>
                                   {notification.type === 'like' && ' liked your post.'}
                                   {notification.type === 'comment' && ' commented on your post.'}
                                   {notification.type === 'friend_request' && ' sent you a friend request.'}

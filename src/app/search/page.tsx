@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -7,39 +8,72 @@ import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/main-layout';
 import PostCard from '@/components/post-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { posts as allPosts, users as allUsers } from '@/lib/data';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Post, User } from '@/lib/data';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 function SearchResults() {
     const searchParams = useSearchParams();
-    const query = searchParams.get('q') || '';
+    const queryTerm = searchParams.get('q') || '';
     const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
     const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const firestore = useFirestore();
 
     useEffect(() => {
-        if (query) {
-            const lowercasedQuery = query.toLowerCase();
+        const search = async () => {
+            if (!queryTerm || !firestore) return;
+
+            setIsLoading(true);
+            const lowercasedQuery = queryTerm.toLowerCase();
             
-            const users = allUsers.filter(user =>
-                user.name.toLowerCase().includes(lowercasedQuery) ||
-                user.bio.toLowerCase().includes(lowercasedQuery)
-            );
-            setFilteredUsers(users);
+            // This is a simplified search. For production, you would use a dedicated search service like Algolia or Elasticsearch.
+            // Searching users by name (requires creating composite indexes in Firestore for more complex queries)
+            try {
+                const usersCol = collection(firestore, 'users');
+                // Simple search by first name, would be better to have a searchable field
+                const userQuery = query(usersCol, where('firstName', '>=', lowercasedQuery), where('firstName', '<=', lowercasedQuery + '\uf8ff'));
+                const userSnap = await getDocs(userQuery);
+                const users = userSnap.docs.map(doc => doc.data() as User);
+                setFilteredUsers(users);
+            } catch(e) {
+                console.error("Could not search users", e);
+                setFilteredUsers([]);
+            }
 
-            const posts = allPosts.filter(post => 
-                post.content.toLowerCase().includes(lowercasedQuery) || 
-                post.author.name.toLowerCase().includes(lowercasedQuery)
-            );
-            setFilteredPosts(posts);
-        } else {
-            setFilteredUsers([]);
-            setFilteredPosts([]);
-        }
-    }, [query]);
+            // Searching posts
+            try {
+                 const postsCol = collection(firestore, 'global_posts');
+                // This is also a very simple search and not scalable.
+                const postSnap = await getDocs(postsCol);
+                const postsData = postSnap.docs.map(doc => ({...doc.data(), id: doc.id}));
 
-    if (!query) {
+                const relevantPosts = postsData.filter(post => post.content.toLowerCase().includes(lowercasedQuery));
+                
+                const postsWithAuthors = await Promise.all(
+                    relevantPosts.map(async (post) => {
+                        const userRef = doc(firestore, 'users', post.authorId);
+                        const userSnap = await getDoc(userRef);
+                        return { ...post, author: userSnap.data() as User } as Post;
+                    })
+                );
+
+                setFilteredPosts(postsWithAuthors);
+
+            } catch(e) {
+                 console.error("Could not search posts", e);
+                 setFilteredPosts([]);
+            }
+
+
+            setIsLoading(false);
+        };
+
+        search();
+    }, [queryTerm, firestore]);
+
+    if (!queryTerm) {
         return (
             <div className="text-center text-muted-foreground">
                 Please enter a search term to begin.
@@ -47,6 +81,10 @@ function SearchResults() {
         );
     }
     
+    if (isLoading) {
+        return <div className="text-center text-muted-foreground">Searching...</div>;
+    }
+
     return (
         <div className="mx-auto grid w-full max-w-4xl gap-8">
             <div>
@@ -58,10 +96,10 @@ function SearchResults() {
                                 <Link key={user.id} href={`/profile/${user.id}`}>
                                     <Card className="flex flex-col items-center p-4 text-center hover:bg-accent">
                                         <Avatar className="mb-4 h-20 w-20">
-                                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={user.avatarUrl} alt={user.firstName} />
+                                            <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <p className="font-semibold">{user.name}</p>
+                                        <p className="font-semibold">{user.firstName} {user.lastName}</p>
                                         <p className="line-clamp-2 text-sm text-muted-foreground">{user.bio}</p>
                                     </Card>
                                 </Link>

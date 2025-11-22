@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { users as initialUsers, posts as allPosts, type User, type Badge as BadgeType, badges as allBadges, type Question } from '@/lib/data';
+import { type User, type Question } from '@/lib/data';
 import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -19,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { QnaSection } from '@/components/qna-section';
 import { QrCodeDialog } from '@/components/qr-code-dialog';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, getDoc } from 'firebase/firestore';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -38,47 +41,53 @@ const badgeIcons: { [key: string]: React.ElementType } = {
 
 export default function ProfilePage() {
     const params = useParams<{ id: string }>();
-    const [users, setUsers] = useState<User[]>(initialUsers);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
     const [isQrCodeOpen, setIsQrCodeOpen] = useState(false);
 
+    const firestore = useFirestore();
+    const { user: authUser } = useUser();
+
     // This is a workaround for a Next.js bug with dynamic routes in App Router.
     const id = params.id;
+    const isCurrentUserProfile = id === 'me';
+    const userId = isCurrentUserProfile ? authUser?.uid : id;
 
-    const currentUser = users.find(u => u.name === 'You');
-    const userId = id === 'me' ? currentUser?.id : id;
-    const user = users.find(u => u.id === userId);
-    const userPosts = allPosts.filter(p => p.author.id === userId);
-    const userFriends = users.filter(u => u.id !== userId && u.id !== '5'); // Exclude current user and 'You'
+    const userProfileDocRef = useMemoFirebase(() => userId ? doc(firestore, 'users', userId) : null, [firestore, userId]);
+    const { data: user, isLoading: isUserLoading } = useDoc<User>(userProfileDocRef);
 
-    const handleProfileUpdate = (updatedUser: User) => {
-        setUsers(currentUsers => currentUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+    const userPostsQuery = useMemoFirebase(() => userId ? collection(firestore, 'users', userId, 'posts') : null, [firestore, userId]);
+    const { data: userPosts, isLoading: arePostsLoading } = useCollection(userPostsQuery);
+
+    // TODO: Implement fetching friends
+    const userFriends: User[] = [];
+
+    const handleProfileUpdate = (updatedData: Partial<User>) => {
+        if (!userProfileDocRef) return;
+        updateDocumentNonBlocking(userProfileDocRef, updatedData);
     };
 
     const handleMoodUpdate = (mood: User['mood']) => {
-        if(user) {
-            handleProfileUpdate({ ...user, mood });
-        }
+        handleProfileUpdate({ mood });
     }
 
     const handleQuestionSubmit = (questionText: string) => {
-        if (!user || !currentUser) return;
-        const newQuestion: Question = {
+        if (!user || !authUser) return;
+        // In a real app, you'd get the current user's profile data
+        const newQuestion = {
             id: `q${(user.questions?.length || 0) + 1}`,
-            questioner: currentUser,
+            questionerId: authUser.uid,
             questionText,
-            timestamp: 'Just now'
+            timestamp: new Date().toISOString()
         };
-        const updatedUser = { ...user, questions: [...(user.questions || []), newQuestion] };
-        handleProfileUpdate(updatedUser);
+        const updatedQuestions = [...(user.questions || []), newQuestion];
+        handleProfileUpdate({ questions: updatedQuestions as any[] });
     }
     
     const handleAnswerSubmit = (questionId: string, answerText: string) => {
         if (!user) return;
         const updatedQuestions = user.questions?.map(q => q.id === questionId ? {...q, answerText} : q);
-        const updatedUser = { ...user, questions: updatedQuestions };
-        handleProfileUpdate(updatedUser);
+        handleProfileUpdate({ questions: updatedQuestions });
     }
 
     // Effect to clear expired moods
@@ -88,13 +97,15 @@ export default function ProfilePage() {
         }
     }, [user]);
     
+    if (isUserLoading) {
+        return <MainLayout><div>Loading profile...</div></MainLayout>;
+    }
+
     if (!user) {
         return <MainLayout><div>User not found</div></MainLayout>;
     }
     
-    const isCurrentUserProfile = id === 'me';
     const moodExpired = user.mood && user.mood.expiresAt < Date.now();
-
 
     return (
         <MainLayout>
@@ -105,8 +116,8 @@ export default function ProfilePage() {
                         <div className="flex flex-col items-center sm:flex-row sm:items-end">
                             <div className="relative">
                                 <Avatar className="h-32 w-32 border-4 border-background">
-                                    <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                    <AvatarFallback className="text-5xl">{user.name.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={user.avatarUrl} alt={user.firstName} />
+                                    <AvatarFallback className="text-5xl">{user.firstName?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 {user.onlineStatus === 'online' && (
                                     <span className="absolute bottom-4 right-4 block h-5 w-5 rounded-full border-2 border-background bg-green-500" />
@@ -128,7 +139,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="mt-4 flex-1 text-center sm:ml-6 sm:text-left">
                                 <div className="flex items-center justify-center gap-2 sm:justify-start">
-                                    <h1 className="text-3xl font-bold">{user.name}</h1>
+                                    <h1 className="text-3xl font-bold">{user.firstName} {user.lastName}</h1>
                                     {user.verified && <CheckCircle className="h-6 w-6 text-primary" />}
                                 </div>
                                 <div className="flex items-center justify-center gap-2 sm:justify-start">
@@ -137,9 +148,9 @@ export default function ProfilePage() {
                                 </div>
                                 <p className="mt-2 text-muted-foreground">{user.bio}</p>
                                  <div className="mt-4 flex justify-center gap-6 text-sm text-muted-foreground sm:justify-start">
-                                    <div><span className="font-bold text-foreground">{userPosts.length}</span> Posts</div>
-                                    <div><span className="font-bold text-foreground">{user.followers}</span> Followers</div>
-                                    <div><span className="font-bold text-foreground">{user.following}</span> Following</div>
+                                    <div><span className="font-bold text-foreground">{userPosts?.length || 0}</span> Posts</div>
+                                    <div><span className="font-bold text-foreground">{user.followers || 0}</span> Followers</div>
+                                    <div><span className="font-bold text-foreground">{user.following || 0}</span> Following</div>
                                 </div>
                             </div>
                             <div className="mt-4 flex shrink-0 gap-2 sm:mt-0">
@@ -252,21 +263,25 @@ export default function ProfilePage() {
                                 <CardTitle>Friends</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {userFriends.slice(0, 9).map(friend => (
-                                        <Link key={friend.id} href={`/profile/${friend.id}`} title={friend.name}>
-                                            <div className="relative">
-                                                <Avatar className="h-16 w-16">
-                                                    <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                                                    <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                {friend.onlineStatus === 'online' && (
-                                                    <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full border-2 border-background bg-green-500" />
-                                                )}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
+                                {userFriends.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {userFriends.slice(0, 9).map(friend => (
+                                            <Link key={friend.id} href={`/profile/${friend.id}`} title={`${friend.firstName} ${friend.lastName}`}>
+                                                <div className="relative">
+                                                    <Avatar className="h-16 w-16">
+                                                        <AvatarImage src={friend.avatarUrl} alt={`${friend.firstName} ${friend.lastName}`} />
+                                                        <AvatarFallback>{friend.firstName?.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    {friend.onlineStatus === 'online' && (
+                                                        <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full border-2 border-background bg-green-500" />
+                                                    )}
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-muted-foreground">No friends to show.</p>
+                                )}
                                 {userFriends.length > 9 && (
                                     <Button variant="link" className="mt-2 w-full">View all friends</Button>
                                 )}
@@ -282,9 +297,11 @@ export default function ProfilePage() {
                                 <TabsTrigger value="qna">Q&amp;A</TabsTrigger>
                             </TabsList>
                             <TabsContent value="posts" className="space-y-6">
-                                {userPosts.length > 0 ? (
+                                {arePostsLoading ? (
+                                    <Card><CardContent className="p-6 text-center text-muted-foreground">Loading posts...</CardContent></Card>
+                                ) : userPosts && userPosts.length > 0 ? (
                                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                        {userPosts.map(post => <PostCard key={post.id} post={post} />)}
+                                        {userPosts.map(post => <PostCard key={post.id} post={{...post, author: user, comments:[], likes: 0}} />)}
                                     </div>
                                 ) : (
                                     <Card>

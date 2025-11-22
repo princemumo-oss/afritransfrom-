@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -12,7 +13,9 @@ import {
   filterContentAndSuggestHashtags,
   type ContentFilteringAndHashtagSuggestionsOutput,
 } from '@/ai/flows/content-filtering-hashtag-suggestions';
-import { users } from '@/lib/data';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { User } from '@/lib/data';
 import { Badge } from './ui/badge';
 
 type CreatePostProps = {
@@ -26,7 +29,12 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ContentFilteringAndHashtagSuggestionsOutput | null>(null);
   const { toast } = useToast();
-  const currentUser = users.find(u => u.name === 'You');
+  
+  const firestore = useFirestore();
+  const { user: authUser } = useUser();
+  const currentUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [firestore, authUser]);
+  const { data: currentUser } = useDoc<User>(currentUserDocRef);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -57,7 +65,9 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
         });
         return;
       }
-
+      
+      // In a real app, you would upload to Firebase Storage here and get a URL.
+      // For now, we'll use a data URL which is not scalable.
       reader.onloadend = () => {
         setMedia({ url: reader.result as string, type: fileType});
       };
@@ -138,8 +148,8 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
       <CardContent className="p-4">
         <div className="flex gap-4">
           <Avatar>
-            <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.name} />
-            <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.firstName} />
+            <AvatarFallback>{currentUser?.firstName?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="w-full">
             <Textarea
