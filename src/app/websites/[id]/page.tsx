@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -6,7 +7,7 @@ import { MainLayout } from '@/components/main-layout';
 import { type Initiative, type User, type InitiativeMessage } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ArrowLeft, ShoppingCart, Loader2, Send, MessageCircle } from 'lucide-react';
+import { ExternalLink, ArrowLeft, ShoppingCart, Loader2, Send, MessageCircle, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -234,15 +235,22 @@ export default function InitiativeDetailPage() {
               <CardTitle className="text-3xl">{initiative.name}</CardTitle>
               <CardDescription>{initiative.description}</CardDescription>
             </div>
-            {initiative.websiteUrl && (
-                <div className="flex-shrink-0 md:ml-auto">
+            <div className="flex-shrink-0 md:ml-auto flex gap-2">
+                {initiative.websiteUrl && (
                     <Button asChild>
                         <a href={initiative.websiteUrl} target="_blank" rel="noopener noreferrer">
                             Visit Website <ExternalLink className="ml-2 h-4 w-4" />
                         </a>
                     </Button>
-                </div>
-            )}
+                )}
+                {initiative.donationLink && (
+                    <Button asChild variant="secondary">
+                        <a href={initiative.donationLink} target="_blank" rel="noopener noreferrer">
+                            <DollarSign className="mr-2 h-4 w-4" /> Donate
+                        </a>
+                    </Button>
+                )}
+            </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <Tabs defaultValue="past-events">
@@ -271,5 +279,3 @@ export default function InitiativeDetailPage() {
     </MainLayout>
   );
 }
-
-    

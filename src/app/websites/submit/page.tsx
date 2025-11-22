@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ const initiativeSchema = z.object({
   name: z.string().min(3, 'Initiative name must be at least 3 characters.'),
   description: z.string().min(20, 'Description must be at least 20 characters.').max(200, 'Description cannot exceed 200 characters.'),
   logoUrl: z.string().url('Please upload a logo.'),
+  donationLink: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -42,6 +43,7 @@ export default function SubmitInitiativePage() {
       name: '',
       description: '',
       logoUrl: '',
+      donationLink: '',
     },
   });
 
@@ -151,6 +153,22 @@ export default function SubmitInitiativePage() {
                       <FormControl>
                         <Textarea placeholder="Briefly describe your initiative's mission and goals." {...field} disabled={isSubmitting} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="donationLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Donation/Payment Link</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://www.paypal.me/your-name" {...field} disabled={isSubmitting} />
+                      </FormControl>
+                      <FormDescription>
+                        Provide a payment link from services like PayPal, Stripe, Paystack, or Flutterwave.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

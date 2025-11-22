@@ -136,7 +136,8 @@ export type Initiative = {
     name: string;
     description: string;
     logoUrl: string;
-    websiteUrl: string;
+    websiteUrl?: string;
+    donationLink?: string;
     cta?: string;
     events: {
         past: InitiativeEvent[];
@@ -182,5 +183,3 @@ export const sampleReels: Reel[] = [
     comments: 101,
   },
 ];
-
-    
