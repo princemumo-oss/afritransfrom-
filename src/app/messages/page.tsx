@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Message, type Conversation, type User } from '@/lib/data';
-import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus, Flame } from 'lucide-react';
+import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus, Flame, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
@@ -36,6 +36,7 @@ export default function MessagesPage() {
     const [conversations, setConversations] = useState<any[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<any>(null);
     const [newMessage, setNewMessage] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
     const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
@@ -350,6 +351,11 @@ export default function MessagesPage() {
         }
     };
 
+    const filteredConversations = conversations.filter(convo => {
+        const participantName = `${convo.participant.firstName} ${convo.participant.lastName}`.toLowerCase();
+        return participantName.includes(searchTerm.toLowerCase());
+    });
+
     if (!currentUser) {
         return <MainLayout><div className="flex items-center justify-center h-full">Loading...</div></MainLayout>
     }
@@ -378,18 +384,29 @@ export default function MessagesPage() {
                 onConversationSelect={setSelectedConversation}
             />
             <div className="grid h-[calc(100vh-8rem)] w-full grid-cols-1 gap-6 md:grid-cols-[300px_1fr]">
-                <Card className="flex-col md:flex hidden">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Messages</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => setIsNewChatOpen(true)}>
-                            <Plus className="h-5 w-5" />
-                        </Button>
+                <Card className="hidden flex-col md:flex">
+                    <CardHeader className="flex flex-col gap-4">
+                        <div className="flex flex-row items-center justify-between">
+                            <CardTitle>Messages</CardTitle>
+                            <Button variant="ghost" size="icon" onClick={() => setIsNewChatOpen(true)}>
+                                <Plus className="h-5 w-5" />
+                            </Button>
+                        </div>
+                         <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search conversations..." 
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </CardHeader>
                     <CardContent className="flex-1 p-0">
                         <ScrollArea className="h-full">
                             <div className="flex flex-col gap-1 p-2">
                                 {isLoadingMessages && <p className="text-center text-muted-foreground p-4">Loading...</p>}
-                                {conversations.map(convo => (
+                                {filteredConversations.map(convo => (
                                     <button
                                         key={convo.id}
                                         onClick={() => setSelectedConversation(convo)}
@@ -660,4 +677,5 @@ export default function MessagesPage() {
     
 
     
+
 
