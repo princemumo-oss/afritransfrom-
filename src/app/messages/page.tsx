@@ -20,6 +20,7 @@ import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@
 import { useWebRTC } from '@/hooks/use-webrtc';
 import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
 import { NewChatDialog } from '@/components/new-chat-dialog';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -44,6 +45,9 @@ export default function MessagesPage() {
     const recordingStartTimeRef = useRef<number | null>(null);
     
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
     // WebRTC state
     const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -95,6 +99,22 @@ export default function MessagesPage() {
         [selectedConversation, firestore]
     );
     const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
+
+    // Listen for typing status
+    useEffect(() => {
+        if (!selectedConversation || !firebaseUser) return;
+        const chatDocRef = doc(firestore, 'chats', selectedConversation.id);
+        
+        const unsub = onSnapshot(chatDocRef, (doc) => {
+            const data = doc.data();
+            if (data?.typing) {
+                const otherUserId = selectedConversation.participant.id;
+                setIsTyping(data.typing[otherUserId] || false);
+            }
+        });
+        
+        return () => unsub();
+    }, [selectedConversation, firebaseUser, firestore]);
 
 
     useEffect(() => {
@@ -207,12 +227,41 @@ export default function MessagesPage() {
       });
 
       setNewMessage('');
+      handleTyping(false);
     }
+    
+    const handleTyping = (isTyping: boolean) => {
+        if (!selectedConversation || !firebaseUser) return;
+        const chatDocRef = doc(firestore, 'chats', selectedConversation.id);
+        updateDoc(chatDocRef, {
+            [`typing.${firebaseUser.uid}`]: isTyping
+        });
+    }
+
+    const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewMessage(e.target.value);
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        } else {
+             handleTyping(true);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            handleTyping(false);
+            typingTimeoutRef.current = null;
+        }, 3000); // 3 seconds of inactivity
+    };
+
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
         sendMessage({ content: newMessage });
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
     };
 
     const addEmoji = (emoji: string) => {
@@ -476,6 +525,27 @@ export default function MessagesPage() {
                                         )}
                                     </div>
                                 ))}
+                                <AnimatePresence>
+                                {isTyping && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="flex items-center gap-3"
+                                    >
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.firstName} />
+                                            <AvatarFallback>{selectedConversation.participant.firstName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex items-center gap-1 rounded-lg bg-muted px-3 py-2">
+                                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]"></span>
+                                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]"></span>
+                                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"></span>
+                                        </div>
+                                    </motion.div>
+                                )}
+                                </AnimatePresence>
                             </div>
                             </ScrollArea>
                         </CardContent>
@@ -494,7 +564,7 @@ export default function MessagesPage() {
                                         placeholder="Type a message..."
                                         className="pr-20 rounded-full"
                                         value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onChange={onInputChange}
                                     />
                                     {newMessage.trim() === '' ? (
                                         <Button type="button" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" onClick={startRecording}>
@@ -544,3 +614,5 @@ export default function MessagesPage() {
         </MainLayout>
     );
 }
+
+    
