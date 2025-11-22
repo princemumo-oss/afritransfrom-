@@ -16,11 +16,11 @@ const aiPersonas = [
     cta: 'Talk to JANET',
   },
   {
-    name: 'AI Advisor',
-    description: 'A helpful and knowledgeable assistant. The advisor is professional, clear, and provides supportive guidance.',
+    name: 'Prince',
+    description: 'A helpful and knowledgeable assistant. Prince is professional, clear, and provides supportive guidance.',
     icon: <MessageCircle className="h-8 w-8 text-blue-500" />,
-    href: '/chatbot/advisor',
-    cta: 'Ask the Advisor',
+    href: '/chatbot/prince',
+    cta: 'Ask Prince',
   },
 ];
 

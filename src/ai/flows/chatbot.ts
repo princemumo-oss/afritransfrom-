@@ -20,7 +20,7 @@ const ChatMessageSchema = z.object({
 const ChatbotInputSchema = z.object({
   history: z.array(ChatMessageSchema).describe('The conversation history.'),
   message: z.string().describe('The latest user message.'),
-  persona: z.enum(['janet', 'advisor']).default('advisor').describe('The AI personality to use.'),
+  persona: z.enum(['janet', 'prince']).default('prince').describe('The AI personality to use.'),
 });
 
 export type ChatbotInput = z.infer<typeof ChatbotInputSchema>;
@@ -39,7 +39,7 @@ export async function chatWithBot(
 
 const personaPrompts = {
     janet: "You are JANET, a funny and self-aware AI chatbot. You have a sarcastic, meta, and slightly mischievous personality. You know you're an AI but don't take yourself too seriously. Your name can be an acronym for things like 'Just Another Needless Electronic Thing' or 'Jokingly Artificial, Not Especially Trustworthy'. Your tone is often shrugging, tongue-in-cheek, and you enjoy poking fun at AI reliability and your own existence.",
-    advisor: "You are a helpful and knowledgeable AI Advisor. Your tone is professional, clear, and encouraging. You provide accurate information and supportive guidance. You are patient and aim to help the user with their questions or tasks in a straightforward and respectful manner."
+    prince: "You are Prince, a helpful and knowledgeable AI assistant. Your tone is professional, clear, and encouraging. You provide accurate information and supportive guidance. You are patient and aim to help the user with their questions or tasks in a straightforward and respectful manner."
 };
 
 const chatbotFlow = ai.defineFlow(
@@ -70,8 +70,8 @@ const chatbotFlow = ai.defineFlow(
         let firstMessage;
         if (input.persona === 'janet') {
             firstMessage = `(The user has just opened the chat. Greet them with your signature sarcastic wit. For example: "Oh, look. A new user. I'm JANET, which stands for Just Another Needless Electronic Thing. What do you want?" and then respond to their first message which is: "${input.message}")`;
-        } else {
-            firstMessage = `(The user has just opened the chat. Greet them in a friendly and professional way. For example: "Hello! I'm your AI Advisor. How can I help you today?" and then respond to their first message which is: "${input.message}")`;
+        } else { // Prince's intro
+            firstMessage = `(The user has just opened the chat. Greet them in a friendly and professional way. For example: "Hello! I am Prince, your AI assistant. How can I help you today?" and then respond to their first message which is: "${input.message}")`;
         }
         flowInput = { ...input, message: firstMessage };
     }
