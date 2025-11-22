@@ -91,14 +91,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   const navItems = [
-    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
-    { href: '/explore', icon: Compass, label: 'Explore', tooltip: 'Explore' },
-    { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels' },
-    { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect' },
-    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
-    { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot' },
-    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
-    { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools' },
+    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed', color: 'text-blue-500' },
+    { href: '/explore', icon: Compass, label: 'Explore', tooltip: 'Explore', color: 'text-orange-500' },
+    { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels', color: 'text-purple-500' },
+    { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect', color: 'text-yellow-500' },
+    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages', color: 'text-green-500' },
+    { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot', color: 'text-indigo-500' },
+    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-pink-500' },
+    { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools', color: 'text-teal-500' },
   ];
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -204,7 +204,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild tooltip={item.tooltip} isActive={pathname === item.href}>
                   <Link href={item.href}>
-                    <item.icon />
+                    <item.icon className={cn(item.color)} />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -256,7 +256,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} tooltip="Log Out">
-                    <LogOut />
+                    <LogOut className="text-red-500" />
                     <span>Log Out</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>

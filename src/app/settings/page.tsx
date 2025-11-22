@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -195,7 +196,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Bell />
+                            <Bell className="text-yellow-500" />
                             Notifications
                         </CardTitle>
                         <CardDescription>Manage how you receive notifications.</CardDescription>
@@ -273,7 +274,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Shield />
+                            <Shield className="text-blue-500" />
                             Privacy &amp; Safety
                         </CardTitle>
                         <CardDescription>Control who can see your activity and content.</CardDescription>
@@ -364,7 +365,7 @@ export default function SettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MessageCircle />
+                            <MessageCircle className="text-green-500" />
                             Messaging &amp; Interaction
                         </CardTitle>
                         <CardDescription>Customize your direct messaging experience.</CardDescription>
@@ -450,7 +451,7 @@ export default function SettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <ImageIcon />
+                            <ImageIcon className="text-purple-500" />
                             Media &amp; Content
                         </CardTitle>
                         <CardDescription>Manage your media and content preferences.</CardDescription>
@@ -541,7 +542,7 @@ export default function SettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <ShieldCheck />
+                            <ShieldCheck className="text-green-500" />
                             Community &amp; Safety
                         </CardTitle>
                         <CardDescription>Tools and.
@@ -585,5 +586,3 @@ export default function SettingsPage() {
 
     
 }
-
-    

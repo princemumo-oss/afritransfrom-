@@ -248,7 +248,7 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Sparkles className="mr-2 h-4 w-4 text-yellow-300" />
+                    <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />
                   )}
                   {isLoading ? 'Analyzing...' : 'Post'}
                 </Button>

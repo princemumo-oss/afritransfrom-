@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -128,7 +129,7 @@ export default function PostCard({ post }: PostCardProps) {
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" disabled={isTranslating}>
-                   {isTranslating ? <Loader2 className="animate-spin" /> : <Languages className="h-4 w-4" />}
+                   {isTranslating ? <Loader2 className="animate-spin" /> : <Languages className="h-4 w-4 text-blue-500" />}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -195,15 +196,13 @@ export default function PostCard({ post }: PostCardProps) {
             <Heart className={cn("h-4 w-4", isLiked && "fill-current")} /> {likeCount}
             </Button>
           <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
-            <MessageCircle className="h-4 w-4" /> {post.comments.length}
+            <MessageCircle className="h-4 w-4 text-blue-500" /> {post.comments.length}
           </Button>
         </div>
         <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
-          <Share2 className="h-4 w-4" /> Share
+          <Share2 className="h-4 w-4 text-green-500" /> Share
         </Button>
       </CardFooter>
     </Card>
   );
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -17,21 +18,24 @@ const aiTools = [
     title: 'Text Translation',
     description: 'Break down language barriers by translating posts and messages into your native language.',
     href: '/messages',
-    cta: 'Try in Messages'
+    cta: 'Try in Messages',
+    color: 'text-blue-500'
   },
   {
     icon: Bot,
     title: 'Content Moderation',
     description: 'Our AI automatically helps filter content to keep the community safe and positive.',
     href: '/',
-    cta: 'See in Feed'
+    cta: 'See in Feed',
+    color: 'text-red-500'
   },
    {
     icon: Image,
     title: 'Hashtag Suggestions',
     description: 'Get relevant hashtag suggestions when you create a post to increase its discoverability.',
     href: '/',
-    cta: 'Try in a New Post'
+    cta: 'Try in a New Post',
+    color: 'text-green-500'
   },
 ];
 
@@ -79,7 +83,7 @@ function StoryGenerator() {
     return (
       <Card className="col-span-1 flex flex-col md:col-span-2 lg:col-span-3">
         <CardHeader>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-purple-500">
             <PenLine className="h-6 w-6" />
           </div>
           <CardTitle className="pt-4">Story Generator</CardTitle>
@@ -134,8 +138,8 @@ export default function AiToolsPage() {
           {aiTools.map((tool) => (
             <Card key={tool.title} className="flex flex-col">
               <CardHeader>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <tool.icon className="h-6 w-6" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <tool.icon className={`h-6 w-6 ${tool.color}`} />
                 </div>
                 <CardTitle className="pt-4">{tool.title}</CardTitle>
               </CardHeader>
