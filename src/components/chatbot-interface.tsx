@@ -6,18 +6,21 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Loader2, Bot, User as UserIcon, Copy, Volume2, ArrowLeft } from 'lucide-react';
+import { Send, Loader2, Bot, User as UserIcon, Copy, Volume2, ArrowLeft, Languages } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { chatWithBot, type ChatbotInput } from '@/ai/flows/chatbot';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
+import { translateText } from '@/ai/flows/translate-text';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
+
 
 type Message = {
     id: number;
@@ -25,8 +28,10 @@ type Message = {
     content: string;
 };
 
+const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
+
 interface ChatbotInterfaceProps {
-    persona: 'janet' | 'advisor';
+    persona: 'janet' | 'prince';
     personaName: string;
     personaAvatarUrl: string;
     welcomeMessage: string;
@@ -56,6 +61,9 @@ export function ChatbotInterface({
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const [translatedMessages, setTranslatedMessages] = useState<Record<number, string>>({});
+    const [translatingMessageId, setTranslatingMessageId] = useState<number | null>(null);
 
     const { user: authUser } = useUser();
     const firestore = useFirestore();
@@ -103,7 +111,7 @@ export function ChatbotInterface({
           toast({
             variant: 'destructive',
             title: 'An Error Occurred',
-            description: `Could not get a response from the ${personaName}. Please try again.`,
+            description: `Could not get a response from ${personaName}. Please try again.`,
           });
           setMessages(prev => prev.slice(0, -1));
         } finally {
@@ -144,6 +152,23 @@ export function ChatbotInterface({
             setPlayingMessageId(null);
         }
       };
+      
+      const handleTranslate = async (messageId: number, content: string, language: string) => {
+        setTranslatingMessageId(messageId);
+        try {
+            const result = await translateText({ text: content, targetLanguage: language });
+            setTranslatedMessages(prev => ({...prev, [messageId]: result.translatedText}));
+        } catch (error) {
+            console.error('Translation error:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Translation Failed',
+                description: 'Could not translate the message at this time.',
+            });
+        } finally {
+            setTranslatingMessageId(null);
+        }
+    };
 
       const handleAudioEnded = () => {
         setPlayingMessageId(null);
@@ -189,6 +214,14 @@ export function ChatbotInterface({
                                             )}
                                             <div className={cn('max-w-md rounded-lg p-3 lg:max-w-lg', message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                                                 <p className="whitespace-pre-wrap">{message.content}</p>
+                                                {translatedMessages[message.id] && (
+                                                    <div className="mt-2 border-t pt-2">
+                                                        <p className="whitespace-pre-wrap text-sm italic">{translatedMessages[message.id]}</p>
+                                                        <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setTranslatedMessages(p => ({...p, [message.id]: ''}))}>
+                                                            Show original
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                              {message.role === 'model' && (
                                                 <div className="flex-col self-center">
@@ -208,6 +241,32 @@ export function ChatbotInterface({
                                                     >
                                                         {playingMessageId === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
                                                     </Button>
+                                                     <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 rounded-full text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                                                                disabled={translatingMessageId === message.id}
+                                                            >
+                                                                {translatingMessageId === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuSub>
+                                                                <DropdownMenuSubTrigger>Translate</DropdownMenuSubTrigger>
+                                                                <DropdownMenuPortal>
+                                                                    <DropdownMenuSubContent>
+                                                                        {availableLanguages.map(lang => (
+                                                                            <DropdownMenuItem key={lang} onClick={() => handleTranslate(message.id, message.content, lang)}>
+                                                                                {lang}
+                                                                            </DropdownMenuItem>
+                                                                        ))}
+                                                                    </DropdownMenuSubContent>
+                                                                </DropdownMenuPortal>
+                                                            </DropdownMenuSub>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             )}
                                             {message.role === 'user' && currentUser && (

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { type User, type Question, type Badge as BadgeType } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode, UserCheck, UserX, Hourglass } from 'lucide-react';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode, UserCheck, UserX, Hourglass, Languages, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
@@ -23,7 +23,10 @@ import { QrCodeDialog } from '@/components/qr-code-dialog';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, getDoc, onSnapshot, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { translateText } from '@/ai/flows/translate-text';
 
+const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -47,6 +50,9 @@ export default function ProfilePage() {
     const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
     const [isQrCodeOpen, setIsQrCodeOpen] = useState(false);
     const { toast } = useToast();
+
+    const [translatedBio, setTranslatedBio] = useState<string | null>(null);
+    const [isTranslatingBio, setIsTranslatingBio] = useState(false);
 
     const firestore = useFirestore();
     const { user: authUser } = useUser();
@@ -159,6 +165,20 @@ export default function ProfilePage() {
         setFriendStatus('not_friends');
         toast({ title: 'Friend request canceled.' });
     };
+    
+    const handleTranslateBio = async (language: string) => {
+        if (!user?.bio) return;
+        setIsTranslatingBio(true);
+        setTranslatedBio(null);
+        try {
+            const result = await translateText({ text: user.bio, targetLanguage: language });
+            setTranslatedBio(result.translatedText);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Translation failed' });
+        } finally {
+            setIsTranslatingBio(false);
+        }
+    };
 
     const FriendStatusButton = () => {
         switch (friendStatus) {
@@ -230,7 +250,29 @@ export default function ProfilePage() {
                                     <p className="text-muted-foreground">@{user.handle}</p>
                                     {user.pronouns && <p className="text-sm text-muted-foreground">&bull; {user.pronouns}</p>}
                                 </div>
-                                <p className="mt-2 text-muted-foreground">{user.bio}</p>
+                                <div className="mt-2 text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
+                                     <p>{user.bio}</p>
+                                     {user.bio && !isCurrentUserProfile && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" disabled={isTranslatingBio}>
+                                                    {isTranslatingBio ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                {availableLanguages.map(lang => (
+                                                    <DropdownMenuItem key={lang} onClick={() => handleTranslateBio(lang)}>{lang}</DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                     )}
+                                </div>
+                                 {translatedBio && (
+                                    <div className="mt-2 text-left text-sm italic text-muted-foreground border-l-2 pl-2">
+                                        {translatedBio}
+                                        <Button variant="link" size="sm" className="p-1 h-auto" onClick={() => setTranslatedBio(null)}>(show original)</Button>
+                                    </div>
+                                 )}
                                  <div className="mt-4 flex justify-center gap-6 text-sm text-muted-foreground sm:justify-start">
                                     <div><span className="font-bold text-foreground">{userPosts?.length || 0}</span> Posts</div>
                                     <div><span className="font-bold text-foreground">{user.followers || 0}</span> Followers</div>
