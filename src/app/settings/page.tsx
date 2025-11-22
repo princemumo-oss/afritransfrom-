@@ -1,4 +1,7 @@
 
+'use client';
+
+import { useState } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +12,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { users } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SettingsPage() {
+    const { toast } = useToast();
+    const currentUser = users.find(u => u.name === 'You');
+
+    // States for various settings
+    const [name, setName] = useState(currentUser?.name || 'You');
+    const [bio, setBio] = useState(currentUser?.bio || 'This is your bio. You can edit it!');
+    const [theme, setTheme] = useState('system');
+    const [notifications, setNotifications] = useState({
+        friendRequests: true,
+        comments: true,
+        likes: false,
+    });
+    const [privacy, setPrivacy] = useState({
+        profileVisibility: 'public',
+        contentFilter: false,
+    });
+    
+    const handleProfileSave = () => {
+        toast({
+            title: 'Profile Saved',
+            description: 'Your profile information has been updated.',
+        });
+        // In a real app, you would update the user data here
+    };
+
+    const handlePrivacySave = () => {
+        toast({
+            title: 'Privacy Settings Saved',
+            description: 'Your privacy preferences have been updated.',
+        });
+    };
+
+
     return (
         <MainLayout>
             <div className="mx-auto grid w-full max-w-4xl gap-6">
@@ -30,15 +68,15 @@ export default function SettingsPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input id="name" defaultValue="You" />
+                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="bio">Bio</Label>
-                            <Textarea id="bio" defaultValue="This is your bio. You can edit it!" />
+                            <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button>Save Changes</Button>
+                        <Button onClick={handleProfileSave}>Save Changes</Button>
                     </CardFooter>
                 </Card>
 
@@ -48,7 +86,7 @@ export default function SettingsPage() {
                         <CardDescription>Choose how afritransform looks and feels.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <RadioGroup defaultValue="system" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div>
                                 <RadioGroupItem value="light" id="light" className="peer sr-only" />
                                 <Label htmlFor="light" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
@@ -82,21 +120,33 @@ export default function SettingsPage() {
                                 <Label htmlFor="friend-requests">Friend Requests</Label>
                                 <p className="text-sm text-muted-foreground">Receive a notification when someone sends you a friend request.</p>
                             </div>
-                            <Switch id="friend-requests" defaultChecked />
+                            <Switch 
+                                id="friend-requests" 
+                                checked={notifications.friendRequests}
+                                onCheckedChange={(checked) => setNotifications(prev => ({...prev, friendRequests: checked}))}
+                            />
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
                                 <Label htmlFor="comments">Comments on your posts</Label>
                                 <p className="text-sm text-muted-foreground">Get notified when someone comments on one of your posts.</p>
                             </div>
-                            <Switch id="comments" defaultChecked />
+                            <Switch 
+                                id="comments" 
+                                checked={notifications.comments}
+                                onCheckedChange={(checked) => setNotifications(prev => ({...prev, comments: checked}))}
+                            />
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
                                 <Label htmlFor="likes">Likes on your posts</Label>
                                 <p className="text-sm text-muted-foreground">Get notified when someone likes one of your posts.</p>
                             </div>
-                            <Switch id="likes" />
+                            <Switch 
+                                id="likes" 
+                                checked={notifications.likes}
+                                onCheckedChange={(checked) => setNotifications(prev => ({...prev, likes: checked}))}
+                            />
                         </div>
                     </CardContent>
                 </Card>
@@ -111,7 +161,10 @@ export default function SettingsPage() {
                                 <Label>Profile Visibility</Label>
                                 <p className="text-sm text-muted-foreground">Control who can view your profile.</p>
                             </div>
-                            <Select defaultValue="public">
+                            <Select 
+                                value={privacy.profileVisibility}
+                                onValueChange={(value) => setPrivacy(prev => ({...prev, profileVisibility: value}))}
+                            >
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select visibility" />
                                 </SelectTrigger>
@@ -127,11 +180,15 @@ export default function SettingsPage() {
                                 <Label>Content Moderation</Label>
                                 <p className="text-sm text-muted-foreground">Filter sensitive content from your feed.</p>
                             </div>
-                            <Switch id="content-filter" />
+                            <Switch 
+                                id="content-filter"
+                                checked={privacy.contentFilter}
+                                onCheckedChange={(checked) => setPrivacy(prev => ({...prev, contentFilter: checked}))}
+                            />
                         </div>
                     </CardContent>
                      <CardFooter>
-                        <Button>Save Privacy Settings</Button>
+                        <Button onClick={handlePrivacySave}>Save Privacy Settings</Button>
                     </CardFooter>
                 </Card>
             </div>
