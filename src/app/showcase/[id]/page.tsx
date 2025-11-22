@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 function MediaGallery({ events }: { events: InitiativeEvent[] }) {
   if (events.length === 0) {
@@ -34,6 +34,10 @@ function MediaGallery({ events }: { events: InitiativeEvent[] }) {
             </div>
           </DialogTrigger>
           <DialogContent className="max-w-4xl p-2">
+             <DialogHeader>
+                <DialogTitle className="sr-only">{event.title}</DialogTitle>
+                <DialogDescription className="sr-only">{event.description}</DialogDescription>
+            </DialogHeader>
              {event.type === 'image' ? (
                 <Image src={event.url} alt={event.title} width={1920} height={1080} className="max-h-[80vh] w-full rounded-lg object-contain" />
               ) : (
