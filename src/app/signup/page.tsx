@@ -94,10 +94,13 @@ export default function SignupPage() {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
+          handle: `${data.firstName.toLowerCase()}${data.lastName.toLowerCase()}`,
           birthday: data.birthday.toISOString().split('T')[0], // format as YYYY-MM-DD
           gender: data.gender,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
+          followers: 0,
+          following: 0,
         };
         // We use the non-blocking version to create the user profile.
         setDocumentNonBlocking(userProfileRef, userProfileData, {});
@@ -107,7 +110,8 @@ export default function SignupPage() {
           description: 'Welcome! You are now being redirected.',
         });
         
-        // The useUser hook will eventually redirect to '/', but we don't need to wait.
+        // Redirect to the acknowledgement page
+        router.push('/acknowledge');
       }
     } catch (error: any) {
       // Handle known error codes from Firebase
@@ -310,3 +314,6 @@ export default function SignupPage() {
 
 
 
+
+
+    
