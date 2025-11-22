@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { type User, type Question } from '@/lib/data';
+import { type User, type Question, type Badge as BadgeType } from '@/lib/data';
 import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { QnaSection } from '@/components/qna-section';
 import { QrCodeDialog } from '@/components/qr-code-dialog';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, getDoc } from 'firebase/firestore';
+import { doc, collection, getDoc, onSnapshot } from 'firebase/firestore';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -59,9 +59,17 @@ export default function ProfilePage() {
     const userPostsQuery = useMemoFirebase(() => userId ? collection(firestore, 'users', userId, 'posts') : null, [firestore, userId]);
     const { data: userPosts, isLoading: arePostsLoading } = useCollection(userPostsQuery);
 
-    // TODO: Implement fetching friends
-    const userFriends: User[] = [];
+    const [userFriends, setUserFriends] = useState<User[]>([]);
 
+    useEffect(() => {
+        if (!user || !user.friends) return;
+        const friendPromises = user.friends.map(friendId => getDoc(doc(firestore, 'users', friendId)));
+        Promise.all(friendPromises).then(friendDocs => {
+            const friendData = friendDocs.map(doc => doc.data() as User);
+            setUserFriends(friendData);
+        });
+    }, [user, firestore]);
+    
     const handleProfileUpdate = (updatedData: Partial<User>) => {
         if (!userProfileDocRef) return;
         updateDocumentNonBlocking(userProfileDocRef, updatedData);
@@ -225,7 +233,7 @@ export default function ProfilePage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    {user.badges.map(badge => {
+                                    {user.badges.map((badge: BadgeType) => {
                                         const Icon = badgeIcons[badge.icon] || Award;
                                         return (
                                             <TooltipProvider key={badge.name}>
@@ -300,9 +308,7 @@ export default function ProfilePage() {
                                 {arePostsLoading ? (
                                     <Card><CardContent className="p-6 text-center text-muted-foreground">Loading posts...</CardContent></Card>
                                 ) : userPosts && userPosts.length > 0 ? (
-                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                        {userPosts.map(post => <PostCard key={post.id} post={{...post, author: user, comments:[], likes: 0}} />)}
-                                    </div>
+                                    userPosts.map(post => <PostCard key={post.id} post={{...post, author: user, comments:[], likes: post.likeIds?.length || 0}} />)
                                 ) : (
                                     <Card>
                                         <CardContent className="p-6 text-center text-muted-foreground">

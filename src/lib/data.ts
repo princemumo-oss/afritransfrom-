@@ -101,10 +101,3 @@ export type Notification = {
   timestamp: string;
   read: boolean;
 };
-
-// Mock badges can remain as they are static definitions
-export const badges: { [key: string]: Badge } = {
-  'pioneer': { name: 'Pioneer', description: 'Joined in the first month.', icon: 'Rocket' },
-  'first-post': { name: 'First Post', description: 'Made your first post.', icon: 'Feather' },
-  'community-builder': { name: 'Community Builder', description: 'Reached 100 followers.', icon: 'Users' },
-};
