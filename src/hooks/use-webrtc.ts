@@ -2,8 +2,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import type { User } from '@/lib/data';
+import { collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, getDoc, getDocs, collectionGroup, writeBatch, query, where } from 'firebase/firestore';
 
 const servers = {
   iceServers: [
@@ -30,7 +29,6 @@ export const useWebRTC = (
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
-
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
@@ -43,32 +41,29 @@ export const useWebRTC = (
 
   const startCall = useCallback(async (calleeId: string) => {
     const stream = await setupStreams();
-    if (!stream || !currentUserId) return;
+    if (!stream || !currentUserId || !firestore) return;
 
+    // Create a new RTCPeerConnection
     pc.current = new RTCPeerConnection(servers);
     
+    // Add local tracks to the connection
     stream.getTracks().forEach((track) => {
       pc.current!.addTrack(track, stream);
     });
 
-    const callDoc = await addDoc(collection(firestore, 'calls'), {
-        calleeId,
-        offer: {
-            uid: currentUserId,
-            sdp: '',
-            type: ''
-        },
-        answer: null,
-    });
+    // Reference to the Firestore collection
+    const callDoc = doc(collection(firestore, 'calls'));
     callIdRef.current = callDoc.id;
 
     const offerCandidates = collection(callDoc, 'offerCandidates');
     const answerCandidates = collection(callDoc, 'answerCandidates');
 
+    // Collect ICE candidates
     pc.current.onicecandidate = (event) => {
       event.candidate && addDoc(offerCandidates, event.candidate.toJSON());
     };
 
+    // Create offer
     const offerDescription = await pc.current.createOffer();
     await pc.current.setLocalDescription(offerDescription);
 
@@ -78,16 +73,19 @@ export const useWebRTC = (
       type: offerDescription.type,
     };
 
-    await updateDoc(callDoc, { offer });
+    // Set the call document in Firestore
+    await setDoc(callDoc, { calleeId, offer, answer: null });
 
-    onSnapshot(callDoc, (snapshot) => {
+    // Listen for the answer
+    const unsubscribe = onSnapshot(callDoc, (snapshot) => {
       const data = snapshot.data();
       if (!pc.current?.currentRemoteDescription && data?.answer) {
         const answerDescription = new RTCSessionDescription(data.answer);
-        pc.current!.setRemoteDescription(answerDescription);
+        pc.current.setRemoteDescription(answerDescription);
       }
     });
 
+    // Listen for ICE candidates from the callee
     onSnapshot(answerCandidates, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
@@ -97,6 +95,7 @@ export const useWebRTC = (
       });
     });
 
+    // Set up remote stream
     pc.current.ontrack = (event) => {
       setRemoteStream(event.streams[0]);
       if(remoteVideoRef.current){
@@ -105,12 +104,12 @@ export const useWebRTC = (
     };
 
     setIsInCall(true);
-
+    return callDoc.id;
   }, [setupStreams, firestore, currentUserId, remoteVideoRef]);
 
   const joinCall = useCallback(async (callId: string) => {
     const stream = await setupStreams();
-    if (!stream) return;
+    if (!stream || !firestore) return;
 
     callIdRef.current = callId;
     pc.current = new RTCPeerConnection(servers);
@@ -134,7 +133,7 @@ export const useWebRTC = (
         }
     };
 
-    const callSnapshot = await getDoc(doc(firestore, 'calls', callId));
+    const callSnapshot = await getDoc(callDoc);
     const callData = callSnapshot.data();
     if (callData?.offer) {
         const offerDescription = new RTCSessionDescription(callData.offer);
@@ -175,12 +174,22 @@ export const useWebRTC = (
         localStream.getTracks().forEach(track => track.stop());
     }
     
-    if (callIdRef.current) {
+    if (callIdRef.current && firestore) {
         const callDocRef = doc(firestore, 'calls', callIdRef.current);
-        const callDoc = await getDoc(callDocRef);
-        if (callDoc.exists()) {
-            await deleteDoc(callDocRef);
-        }
+        const offerCandidatesQuery = query(collection(callDocRef, 'offerCandidates'));
+        const answerCandidatesQuery = query(collection(callDocRef, 'answerCandidates'));
+
+        const [offerCandidatesSnap, answerCandidatesSnap] = await Promise.all([
+            getDocs(offerCandidatesQuery),
+            getDocs(answerCandidatesQuery)
+        ]);
+
+        const batch = writeBatch(firestore);
+        offerCandidatesSnap.forEach(doc => batch.delete(doc.ref));
+        answerCandidatesSnap.forEach(doc => batch.delete(doc.ref));
+        batch.delete(callDocRef);
+        
+        await batch.commit();
     }
 
     setLocalStream(null);

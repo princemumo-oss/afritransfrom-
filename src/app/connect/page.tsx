@@ -25,7 +25,7 @@ export default function ConnectPage() {
   const [chatMessage, setChatMessage] = useState('');
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
-  const [incomingCall, setIncomingCall] = useState<{ callId: string; from: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ callId: string; from: User } | null>(null);
   
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
@@ -43,20 +43,17 @@ export default function ConnectPage() {
   useEffect(() => {
     if (!currentUser || !callsCollection) return;
 
-    const q = query(callsCollection, where("answer", "==", null));
+    const q = query(callsCollection, where("calleeId", "==", currentUser.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             if (change.type === "added") {
                 const callData = change.doc.data();
-                if(callData.offer.uid !== currentUser.uid) {
-                    // Check if there is an answer to ensure it's a call for us
-                    const receiverId = callData.calleeId;
-                    if (receiverId === currentUser.uid) {
-                        const userSnap = await getDoc(doc(firestore, 'users', callData.offer.uid));
-                        if(userSnap.exists()){
-                            setIncomingCall({ callId: change.doc.id, from: userSnap.data() as User });
-                        }
+                // Ensure it's a new call we haven't processed and it has an offer
+                if (callData.offer && !callData.answer) {
+                    const userSnap = await getDoc(doc(firestore, 'users', callData.offer.uid));
+                    if(userSnap.exists()){
+                        setIncomingCall({ callId: change.doc.id, from: userSnap.data() as User });
                     }
                 }
             }
@@ -86,6 +83,9 @@ export default function ConnectPage() {
     setIsConnecting(true);
 
     try {
+        await hangUp(); // Hang up any previous call before starting a new one
+        setConnectedUser(null);
+
         const usersSnapshot = await getDocs(usersCollection);
         const allUsers = usersSnapshot.docs
             .map(doc => doc.data() as User)
@@ -102,9 +102,9 @@ export default function ConnectPage() {
         }
 
         const randomUser = allUsers[Math.floor(Math.random() * allUsers.length)];
-        setConnectedUser(randomUser);
         
         await startCall(randomUser.id);
+        setConnectedUser(randomUser);
 
         toast({
             title: 'Calling...',
@@ -126,10 +126,7 @@ export default function ConnectPage() {
   const handleAnswerCall = async () => {
     if(incomingCall){
         await joinCall(incomingCall.callId);
-        const callerSnap = await getDoc(doc(firestore, 'users', incomingCall.from));
-        if (callerSnap.exists()){
-             setConnectedUser(callerSnap.data() as User);
-        }
+        setConnectedUser(incomingCall.from);
         setIncomingCall(null);
     }
   }
@@ -152,7 +149,7 @@ export default function ConnectPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatMessage.trim() || !currentUser) return;
+    if (!chatMessage.trim() || !currentUser || !firestore) return;
     
     const currentUserSnap = await getDoc(doc(firestore, 'users', currentUser.uid));
     if (!currentUserSnap.exists()) return;

@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { VoiceNotePlayer } from '@/components/voice-note-player';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc, Timestamp, setDoc } from 'firebase/firestore';
 import { NewChatDialog } from '@/components/new-chat-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { isSameDay, isYesterday, subDays } from 'date-fns';
@@ -74,7 +74,7 @@ export default function MessagesPage() {
 
     // This is a separate effect to listen to real-time updates for conversations
     useEffect(() => {
-        if (!conversationsQuery || !firebaseUser) return;
+        if (!conversationsQuery || !firebaseUser || !firestore) return;
     
         const unsubscribe = onSnapshot(conversationsQuery, async (snapshot) => {
             const convos = await Promise.all(
@@ -87,7 +87,7 @@ export default function MessagesPage() {
                     return { id: convoDoc.id, ...convoData, participant: userSnap.data() };
                 })
             );
-            const validConvos = convos.filter(Boolean);
+            const validConvos = convos.filter(c => c && c.participant);
             setConversations(validConvos);
 
             // Update selected conversation with new data
@@ -102,7 +102,7 @@ export default function MessagesPage() {
         });
     
         return () => unsubscribe();
-    }, [conversationsQuery, firebaseUser, firestore, selectedConversation]);
+    }, [conversationsQuery, firebaseUser, firestore]);
 
 
     // Fetch messages for the selected conversation
@@ -114,7 +114,7 @@ export default function MessagesPage() {
 
     // Listen for typing status
     useEffect(() => {
-        if (!selectedConversation || !firebaseUser) return;
+        if (!selectedConversation || !firebaseUser || !firestore) return;
         const chatDocRef = doc(firestore, 'chats', selectedConversation.id);
         
         const unsub = onSnapshot(chatDocRef, (doc) => {
@@ -130,21 +130,22 @@ export default function MessagesPage() {
 
 
     useEffect(() => {
-        if (!currentUser || !callsCollection) return;
+        if (!currentUser || !callsCollection || !firestore) return;
 
-        const q = query(callsCollection, where('calleeId', '==', currentUser.id), where("answer", "==", null));
+        const q = query(callsCollection, where('calleeId', '==', currentUser.id));
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             for (const change of snapshot.docChanges()) {
                 if (change.type === "added") {
                     const callData = change.doc.data();
-                    const offererId = callData.offer.uid;
-                    
-                    const userRef = doc(firestore, 'users', offererId);
-                    const userSnap = await getDoc(userRef);
-                    const fromUser = userSnap.data() as User;
-                    if (fromUser) {
-                        setIncomingCall({ callId: change.doc.id, from: fromUser });
+                     if (callData.offer && !callData.answer) {
+                        const offererId = callData.offer.uid;
+                        const userRef = doc(firestore, 'users', offererId);
+                        const userSnap = await getDoc(userRef);
+                        const fromUser = userSnap.data() as User;
+                        if (fromUser) {
+                            setIncomingCall({ callId: change.doc.id, from: fromUser });
+                        }
                     }
                 }
             }
@@ -199,7 +200,7 @@ export default function MessagesPage() {
     const toggleLocalVideo = () => {
         const newVideoState = !isVideoMuted;
         toggleVideo(newVideoState);
-        setIsVideoMuted(newVideoState);
+setIsVideoMuted(newVideoState);
     };
 
 
@@ -221,13 +222,13 @@ export default function MessagesPage() {
       };
 
       const handleReaction = (messageId: string, reaction: string) => {
-        if (!selectedConversation) return;
+        if (!selectedConversation || !firestore) return;
         const messageRef = doc(firestore, 'chats', selectedConversation.id, 'messages', messageId);
         updateDoc(messageRef, { reaction });
       };
     
       const sendMessage = async (message: { content?: string, audioUrl?: string, audioDuration?: number }) => {
-        if (!firebaseUser || !selectedConversation) return;
+        if (!firebaseUser || !selectedConversation || !firestore) return;
   
         const now = new Date();
         const chatRef = doc(firestore, 'chats', selectedConversation.id);
@@ -266,7 +267,7 @@ export default function MessagesPage() {
       }
     
     const handleTyping = (isTyping: boolean) => {
-        if (!selectedConversation || !firebaseUser) return;
+        if (!selectedConversation || !firebaseUser || !firestore) return;
         const chatDocRef = doc(firestore, 'chats', selectedConversation.id);
         updateDoc(chatDocRef, {
             [`typing.${firebaseUser.uid}`]: isTyping
