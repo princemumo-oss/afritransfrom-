@@ -481,7 +481,7 @@
           "schema": {
             "$ref": "#/backend/entities/Initiative"
           },
-          "description": "Stores user-submitted initiatives for the showcase. Includes a status for an approval workflow.",
+          "description": "Stores user-submitted initiatives. Includes a status for an approval workflow.",
           "params": [
             {
               "name": "initiativeId",
@@ -491,6 +491,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. A `calls` collection is added to handle WebRTC signaling for video and voice calls. A new `initiatives` collection is added to handle user submissions for the showcase feature, with a `status` field to manage an approval workflow."
+    "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. A `calls` collection is added to handle WebRTC signaling for video and voice calls. A new `initiatives` collection is added to handle user submissions, with a `status` field to manage an approval workflow."
   }
 }

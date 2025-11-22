@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe, Link2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import type { User } from '@/lib/data';
@@ -97,7 +97,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot', color: 'text-indigo-500' },
     { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-pink-500' },
     { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools', color: 'text-teal-500' },
-    { href: '/showcase', icon: Globe, label: 'Showcase', tooltip: 'Showcase', color: 'text-rose-500' },
+    { href: '/websites', icon: Link2, label: 'Websites', tooltip: 'Websites', color: 'text-rose-500' },
   ];
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -201,7 +201,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild tooltip={item.tooltip} isActive={pathname === item.href}>
+                <SidebarMenuButton asChild tooltip={item.tooltip} isActive={pathname.startsWith(item.href) && (item.href === '/' ? pathname === '/' : true)}>
                   <Link href={item.href}>
                     <item.icon className={cn(item.color)} />
                     <span>{item.label}</span>

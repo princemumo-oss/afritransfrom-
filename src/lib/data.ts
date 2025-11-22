@@ -131,7 +131,7 @@ export type Product = {
     purchaseUrl: string;
 }
 
-export type ShowcaseInitiative = {
+export type Initiative = {
     id: string;
     name: string;
     description: string;
