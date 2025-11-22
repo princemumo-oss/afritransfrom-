@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, MessageCircle, Bell, Image as ImageIcon } from 'lucide-react';
+import { Shield, MessageCircle, Bell, Image as ImageIcon, ShieldCheck, Flag, ShieldQuestion, Users as UsersIcon, LifeBuoy } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -489,8 +489,49 @@ export default function SettingsPage() {
                     </CardFooter>
                 </Card>
 
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ShieldCheck />
+                            Community &amp; Safety
+                        </CardTitle>
+                        <CardDescription>Tools and resources to help you stay safe on the platform.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div>
+                            <Label>Report Abuse or Harassment</Label>
+                            <p className="text-sm text-muted-foreground mb-2">Report content or behavior that violates our community guidelines.</p>
+                            <Button variant="outline">
+                                <Flag className="mr-2 h-4 w-4" /> Report an Issue
+                            </Button>
+                        </div>
+                         <div>
+                            <Label>Safety Check</Label>
+                            <p className="text-sm text-muted-foreground mb-2">Review your blocked and muted accounts to ensure your safety.</p>
+                            <Button variant="outline">
+                                <ShieldQuestion className="mr-2 h-4 w-4" /> Review Accounts
+                            </Button>
+                        </div>
+                        <div>
+                            <Label>Trusted Contacts</Label>
+                            <p className="text-sm text-muted-foreground mb-2">Choose friends who can help you recover your account if you get locked out.</p>
+                            <Button variant="outline">
+                                <UsersIcon className="mr-2 h-4 w-4" /> Manage Trusted Contacts
+                            </Button>
+                        </div>
+                         <div>
+                            <Label>Crisis Resources</Label>
+                            <p className="text-sm text-muted-foreground mb-2">Find links to helplines and other support resources.</p>
+                            <Button variant="outline">
+                                <LifeBuoy className="mr-2 h-4 w-4" /> Get Help
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
             </div>
         </MainLayout>
     );
 
     
+}
