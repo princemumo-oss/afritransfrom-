@@ -1,11 +1,12 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe, Link2 } from 'lucide-react';
-import React, { useEffect } from 'react';
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import type { User } from '@/lib/data';
+import React, { useEffect, useState } from 'react';
+import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import type { User, Initiative } from '@/lib/data';
 
 import {
   Sidebar,
@@ -29,7 +30,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { QrScannerDialog } from './qr-scanner-dialog';
-import { doc } from 'firebase/firestore';
+import { doc, query, collection, where } from 'firebase/firestore';
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -45,6 +46,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { setOpenMobile } = useSidebar();
 
+  // Check if the user owns any approved initiatives
+  const userInitiativesQuery = useMemoFirebase(() => 
+    authUser ? query(collection(firestore, 'initiatives'), where('submittedBy', '==', authUser.uid), where('status', '==', 'approved')) : null
+  , [firestore, authUser]);
+  const { data: userInitiatives } = useCollection<Initiative>(userInitiativesQuery);
+  const hasApprovedWebsite = userInitiatives && userInitiatives.length > 0;
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
@@ -209,6 +216,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+             {hasApprovedWebsite && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Manage Websites" isActive={pathname.startsWith('/websites/manage')}>
+                  <Link href="/websites/manage">
+                    <HardHat className="text-gray-500" />
+                    <span>Manage Websites</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t p-2">
