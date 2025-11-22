@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Text-to-Speech (TTS) AI flow.
@@ -71,7 +72,7 @@ const textToSpeechFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Alloy' }, // A standard, clear voice
+            prebuiltVoiceConfig: { voiceName: 'Algenib' }, // A standard, clear voice
           },
         },
       },
