@@ -1,13 +1,14 @@
 
+
 'use client';
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { MainLayout } from '@/components/main-layout';
-import { showcasedInitiatives, type InitiativeEvent } from '@/lib/data';
+import { showcasedInitiatives, type InitiativeEvent, type Product } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ArrowLeft } from 'lucide-react';
+import { ExternalLink, ArrowLeft, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -52,6 +53,38 @@ function MediaGallery({ events }: { events: InitiativeEvent[] }) {
       ))}
     </div>
   );
+}
+
+function ProductGallery({ products }: { products: Product[] }) {
+    if (!products || products.length === 0) {
+        return <p className="text-center text-muted-foreground">No products available at this time.</p>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map(product => (
+                <Card key={product.id} className="flex flex-col">
+                    <CardHeader className="p-0">
+                        <div className="relative aspect-video overflow-hidden rounded-t-lg">
+                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-4">
+                        <h3 className="font-semibold">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">{product.description}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center p-4 pt-0">
+                        <p className="font-bold">{product.price}</p>
+                        <Button asChild size="sm">
+                            <a href={product.purchaseUrl} target="_blank" rel="noopener noreferrer">
+                                <ShoppingCart className="mr-2 h-4 w-4" /> Buy Now
+                            </a>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    );
 }
 
 export default function InitiativeDetailPage() {
@@ -99,15 +132,19 @@ export default function InitiativeDetailPage() {
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <Tabs defaultValue="past-events">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="past-events">Past Events</TabsTrigger>
                 <TabsTrigger value="upcoming-events">Upcoming Events</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
               </TabsList>
               <TabsContent value="past-events" className="mt-4">
                 <MediaGallery events={initiative.events.past} />
               </TabsContent>
               <TabsContent value="upcoming-events" className="mt-4">
                 <MediaGallery events={initiative.events.upcoming} />
+              </TabsContent>
+              <TabsContent value="products" className="mt-4">
+                <ProductGallery products={initiative.products || []} />
               </TabsContent>
             </Tabs>
           </CardContent>

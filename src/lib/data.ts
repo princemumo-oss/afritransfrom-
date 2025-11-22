@@ -122,6 +122,15 @@ export type InitiativeEvent = {
     type: 'image' | 'video';
 }
 
+export type Product = {
+    id: string;
+    name: string;
+    description: string;
+    price: string;
+    imageUrl: string;
+    purchaseUrl: string;
+}
+
 export type ShowcaseInitiative = {
     id: string;
     name: string;
@@ -132,7 +141,8 @@ export type ShowcaseInitiative = {
     events: {
         past: InitiativeEvent[];
         upcoming: InitiativeEvent[];
-    }
+    },
+    products?: Product[];
 }
 
 export const showcasedInitiatives: ShowcaseInitiative[] = [
@@ -172,7 +182,33 @@ export const showcasedInitiatives: ShowcaseInitiative[] = [
                 type: 'image'
             }
         ]
-    }
+    },
+    products: [
+        {
+            id: 'book-1',
+            name: 'The Vision Bearer',
+            description: 'A book by Bishop John Munyasya Kimanzi on leadership and vision.',
+            price: '$15.00',
+            imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxib29rJTIwY292ZXJ8ZW58MHx8fHwxNzYzNzg5MDAyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            purchaseUrl: '#'
+        },
+        {
+            id: 'tshirt-1',
+            name: 'Arise Africa T-Shirt',
+            description: 'Official initiative t-shirt. High-quality cotton.',
+            price: '$25.00',
+            imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0c2hpcnR8ZW58MHx8fHwxNzYzNzg5MDIxfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            purchaseUrl: '#'
+        },
+        {
+            id: 'mug-1',
+            name: 'Initiative Mug',
+            description: 'Start your day with the vision. Ceramic 11oz mug.',
+            price: '$12.00',
+            imageUrl: 'https://images.unsplash.com/photo-1510626176961-4bce7e6f0083?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtdWd8ZW58MHx8fHwxNzYzNzg5MDM4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+            purchaseUrl: '#'
+        }
+    ]
   },
 ];
 
