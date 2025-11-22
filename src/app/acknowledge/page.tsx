@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Globe, Target, BookOpen, Users, Handshake, ExternalLink } from 'lucide-react';
+import { Globe, Target, BookOpen, Users, Handshake, ExternalLink, X } from 'lucide-react';
 
 export default function AcknowledgePage() {
   const router = useRouter();
@@ -16,7 +16,11 @@ export default function AcknowledgePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/50 p-4 sm:p-6 lg:p-8">
-      <Card className="w-full max-w-3xl">
+      <Card className="relative w-full max-w-3xl">
+        <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-10" onClick={handleProceed}>
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close</span>
+        </Button>
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Globe className="h-8 w-8" />
@@ -96,5 +100,3 @@ export default function AcknowledgePage() {
     </div>
   );
 }
-
-    
