@@ -40,15 +40,24 @@ export default function PostCard({ post }: PostCardProps) {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
-        {post.imageUrl && (
+        {post.mediaUrl && (
           <div className="relative aspect-video overflow-hidden rounded-lg border">
-            <Image
-              src={post.imageUrl}
-              alt="Post image"
-              fill
-              className="object-cover"
-              data-ai-hint={post.imageHint}
-            />
+            {post.mediaType === 'image' ? (
+              <Image
+                src={post.mediaUrl}
+                alt="Post image"
+                fill
+                className="object-cover"
+                data-ai-hint={post.imageHint}
+              />
+            ) : (
+              <video
+                src={post.mediaUrl}
+                controls
+                className="h-full w-full object-cover"
+                data-ai-hint="user uploaded video"
+              />
+            )}
           </div>
         )}
       </CardContent>

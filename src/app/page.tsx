@@ -11,7 +11,7 @@ import { users } from '@/lib/data';
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
 
-  const handleAddPost = (content: string, photoUrl: string | null) => {
+  const handleAddPost = (content: string, mediaUrl: string | null, mediaType: 'image' | 'video' | null) => {
     const currentUser = users.find(u => u.name === 'You');
     if (!currentUser) return;
 
@@ -19,8 +19,9 @@ export default function Home() {
       id: `p${posts.length + 1}`,
       author: currentUser,
       content: content,
-      imageUrl: photoUrl ?? undefined,
-      imageHint: photoUrl ? 'user uploaded' : undefined,
+      mediaUrl: mediaUrl ?? undefined,
+      mediaType: mediaType ?? undefined,
+      imageHint: mediaType === 'image' && mediaUrl ? 'user uploaded' : undefined,
       timestamp: 'Just now',
       likes: 0,
       comments: [],

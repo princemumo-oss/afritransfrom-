@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Image as ImageIcon, Send, Loader2, Sparkles, X } from 'lucide-react';
+import { Image as ImageIcon, Send, Loader2, Sparkles, X, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   filterContentAndSuggestHashtags,
@@ -16,13 +16,13 @@ import { users } from '@/lib/data';
 import { Badge } from './ui/badge';
 
 type CreatePostProps = {
-    onAddPost: (content: string, photoUrl: string | null) => void;
+    onAddPost: (content: string, mediaUrl: string | null, mediaType: 'image' | 'video' | null) => void;
 };
 
 
 export default function CreatePost({ onAddPost }: CreatePostProps) {
   const [content, setContent] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [media, setMedia] = useState<{url: string; type: 'image' | 'video'} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ContentFilteringAndHashtagSuggestionsOutput | null>(null);
   const { toast } = useToast();
@@ -31,22 +31,42 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
 
 
   const handlePhotoUpload = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+        fileInputRef.current.accept = 'image/*';
+        fileInputRef.current.click();
+    }
+  };
+  
+  const handleVideoUpload = () => {
+      if (fileInputRef.current) {
+          fileInputRef.current.accept = 'video/*';
+          fileInputRef.current.click();
+      }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
+      const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : null;
+      if (!fileType) {
+        toast({
+            variant: 'destructive',
+            title: 'Unsupported File Type',
+            description: 'Please select an image or a video file.'
+        });
+        return;
+      }
+
       reader.onloadend = () => {
-        setPhoto(reader.result as string);
+        setMedia({ url: reader.result as string, type: fileType});
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const removePhoto = () => {
-    setPhoto(null);
+  const removeMedia = () => {
+    setMedia(null);
     if(fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -67,7 +87,7 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
     try {
       const result = await filterContentAndSuggestHashtags({ 
         content: analysisResult ? analysisResult.filteredContent : content,
-        photoDataUri: photo ?? undefined
+        photoDataUri: media?.type === 'image' ? media.url : undefined
       });
 
       if (!result.isContentAllowed) {
@@ -95,14 +115,14 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
   const handlePublish = () => {
     if (!analysisResult) return;
     
-    onAddPost(analysisResult.filteredContent, photo);
+    onAddPost(analysisResult.filteredContent, media?.url ?? null, media?.type ?? null);
     
     toast({
         title: 'Post Published!',
         description: "Your post is now live for your friends to see.",
     });
     setContent('');
-    setPhoto(null);
+    setMedia(null);
     setAnalysisResult(null);
     if(fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -134,23 +154,31 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
               ref={fileInputRef}
               onChange={handleFileChange}
               className="hidden"
-              accept="image/*"
             />
-            {photo && (
+            {media && (
               <div className="relative mb-2">
-                <Image
-                  src={photo}
-                  alt="New post preview"
-                  width={600}
-                  height={400}
-                  className="rounded-lg object-cover w-full"
-                  data-ai-hint="user uploaded image"
-                />
+                {media.type === 'image' ? (
+                    <Image
+                        src={media.url}
+                        alt="New post preview"
+                        width={600}
+                        height={400}
+                        className="rounded-lg object-cover w-full"
+                        data-ai-hint="user uploaded image"
+                    />
+                ) : (
+                    <video
+                        src={media.url}
+                        controls
+                        className="rounded-lg object-cover w-full"
+                        data-ai-hint="user uploaded video"
+                    />
+                )}
                  <Button
                   variant="destructive"
                   size="icon"
                   className="absolute top-2 right-2 h-7 w-7"
-                  onClick={removePhoto}
+                  onClick={removeMedia}
                   disabled={isLoading || !!analysisResult}
                 >
                   <X className="h-4 w-4" />
@@ -172,9 +200,14 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
             )}
 
             <div className="flex justify-between items-center mt-2">
-              <Button variant="ghost" size="icon" onClick={handlePhotoUpload} disabled={isLoading || !!analysisResult}>
-                <ImageIcon className="h-5 w-5 text-green-500" />
-              </Button>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={handlePhotoUpload} disabled={isLoading || !!analysisResult}>
+                        <ImageIcon className="h-5 w-5 text-green-500" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleVideoUpload} disabled={isLoading || !!analysisResult}>
+                        <Video className="h-5 w-5 text-blue-500" />
+                    </Button>
+                </div>
               {analysisResult ? (
                 <Button onClick={handlePublish}>
                   <Send className="mr-2 h-4 w-4" /> Publish

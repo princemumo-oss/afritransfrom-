@@ -16,7 +16,8 @@ export type Post = {
   id: string;
   author: User;
   content: string;
-  imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   imageHint?: string;
   timestamp: string;
   likes: number;
@@ -74,7 +75,8 @@ export const posts: Post[] = [
     id: 'p2',
     author: users[1],
     content: 'Enjoying this beautiful sunset from my balcony. Life is good.',
-    imageUrl: imageMap.get('post-1')!.imageUrl,
+    mediaUrl: imageMap.get('post-1')!.imageUrl,
+    mediaType: 'image',
     imageHint: imageMap.get('post-1')!.imageHint,
     timestamp: '5h ago',
     likes: 128,
@@ -84,7 +86,8 @@ export const posts: Post[] = [
     id: 'p3',
     author: users[2],
     content: 'I made pasta for dinner tonight! It was delicious.',
-    imageUrl: imageMap.get('post-3')!.imageUrl,
+    mediaUrl: imageMap.get('post-3')!.imageUrl,
+    mediaType: 'image',
     imageHint: imageMap.get('post-3')!.imageHint,
     timestamp: '1d ago',
     likes: 89,
@@ -94,7 +97,8 @@ export const posts: Post[] = [
     id: 'p4',
     author: users[3],
     content: 'Found this cute little guy on my walk today! 🐶',
-    imageUrl: imageMap.get('post-4')!.imageUrl,
+    mediaUrl: imageMap.get('post-4')!.imageUrl,
+    mediaType: 'image',
     imageHint: imageMap.get('post-4')!.imageHint,
     timestamp: '2d ago',
     likes: 256,
