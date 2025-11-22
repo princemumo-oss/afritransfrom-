@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe, Link2 } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe, Link2, Plus, Camera, Upload } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useAuth, useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import type { User, Initiative } from '@/lib/data';
@@ -31,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { QrScannerDialog } from './qr-scanner-dialog';
 import { doc, query, collection, where } from 'firebase/firestore';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +43,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const { toast } = useToast();
   const { setOpenMobile } = useSidebar();
 
@@ -332,6 +333,36 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         <SidebarInset>
           <div className="flex-1 p-4 sm:p-6">{children}</div>
         </SidebarInset>
+
+        <Sheet open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen}>
+          <SheetTrigger asChild>
+              <Button size="icon" className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg md:bottom-8 md:right-8">
+                <Plus className="h-7 w-7" />
+              </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="w-full rounded-t-lg sm:max-w-lg mx-auto">
+            <SheetHeader>
+              <SheetTitle>Create</SheetTitle>
+              <SheetDescription>What would you like to share with the world?</SheetDescription>
+            </SheetHeader>
+            <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
+                <Link href="/reels/create?mode=camera" onClick={() => setIsCreateSheetOpen(false)}>
+                    <Card className="flex flex-col items-center justify-center p-6 text-center hover:bg-accent transition-colors">
+                        <Camera className="h-10 w-10 text-primary mb-2" />
+                        <h3 className="font-semibold">Record Reel</h3>
+                        <p className="text-xs text-muted-foreground">Use your camera</p>
+                    </Card>
+                </Link>
+                <Link href="/reels/create?mode=upload" onClick={() => setIsCreateSheetOpen(false)}>
+                    <Card className="flex flex-col items-center justify-center p-6 text-center hover:bg-accent transition-colors">
+                        <Upload className="h-10 w-10 text-primary mb-2" />
+                        <h3 className="font-semibold">Upload Reel</h3>
+                         <p className="text-xs text-muted-foreground">From your gallery</p>
+                    </Card>
+                </Link>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );

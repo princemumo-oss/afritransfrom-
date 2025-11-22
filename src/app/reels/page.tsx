@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -6,9 +5,9 @@ import { MainLayout } from '@/components/main-layout';
 import { type Reel } from '@/lib/data';
 import { ReelPlayer } from '@/components/reel-player';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Clapperboard } from 'lucide-react';
+import { Clapperboard, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, orderBy } from 'firebase/firestore';
 
 export default function ReelsPage() {
   const [reels, setReels] = useState<Reel[]>([]);
@@ -16,11 +15,37 @@ export default function ReelsPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const firestore = useFirestore();
 
-  // In a real app, you would fetch reels from your backend.
-  // For now, we just initialize an empty array.
+  const storiesQuery = useMemoFirebase(() => 
+    firestore ? collection(firestore, 'stories') : null
+  , [firestore]);
+
+  const { data: storyDocs, isLoading } = useCollection(storiesQuery);
+  
   useEffect(() => {
-    setReels([]);
-  }, []);
+    if (!storyDocs) return;
+
+    const fetchAuthors = async () => {
+        const reelsWithAuthors = await Promise.all(
+            storyDocs.map(async (story) => {
+                const userRef = doc(firestore, 'users', story.authorId);
+                const userSnap = await getDoc(userRef);
+                const author = userSnap.data();
+                // This is a simplified version of Reel, mapping from Story
+                return { 
+                  id: story.id,
+                  author: author,
+                  videoUrl: story.mediaUrl,
+                  caption: story.caption || '',
+                  likes: story.likeIds?.length || 0,
+                  comments: 0 // Comments not implemented for stories yet
+                } as Reel;
+            })
+        );
+        setReels(reelsWithAuthors);
+    };
+
+    fetchAuthors();
+  }, [storyDocs, firestore]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -50,6 +75,16 @@ export default function ReelsPage() {
     };
   }, [reels]);
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex h-full w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </MainLayout>
+    )
+  }
+
   if (reels.length === 0) {
     return (
       <MainLayout>
@@ -58,7 +93,7 @@ export default function ReelsPage() {
             <Clapperboard className="h-4 w-4" />
             <AlertTitle>No Reels to Show</AlertTitle>
             <AlertDescription>
-              There are no reels available at the moment. Check back later!
+              There are no reels available at the moment. Be the first to create one!
             </AlertDescription>
           </Alert>
         </div>
