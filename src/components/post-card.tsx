@@ -24,7 +24,7 @@ type PostCardProps = {
 };
 
 const reactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
-const availableLanguages = ['Spanish', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
+const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 
 export default function PostCard({ post }: PostCardProps) {
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
@@ -64,7 +64,8 @@ export default function PostCard({ post }: PostCardProps) {
     setIsTranslating(true);
     setTranslatedContent(null);
     try {
-      const result = await translateText({ text: post.content, targetLanguage: language });
+      const targetLanguage = language === 'Español' ? 'Spanish' : language;
+      const result = await translateText({ text: post.content, targetLanguage: targetLanguage });
       setTranslatedContent(result.translatedText);
     } catch (error) {
       console.error('Translation error:', error);
