@@ -98,14 +98,13 @@ export const badges: { [key: string]: Badge } = {
   'community-builder': { name: 'Community Builder', description: 'Reached 100 followers.', icon: 'Users' },
 };
 
-
-export const users: User[] = [
-  { 
-    id: '1', 
-    name: 'Alice', 
+const usersData: Omit<User, 'questions'>[] = [
+  {
+    id: '1',
+    name: 'Alice',
     handle: 'alice',
     verified: true,
-    avatarUrl: imageMap.get('avatar-1')!.imageUrl, 
+    avatarUrl: imageMap.get('avatar-1')!.imageUrl,
     bio: 'Software Engineer and cat lover. 🐈 #DevLife',
     followers: 1500,
     following: 250,
@@ -117,16 +116,12 @@ export const users: User[] = [
     relationshipStatus: 'In a relationship',
     hobbies: ['Coding', 'Reading', 'Cats'],
     family: [{ relation: 'Brother', name: 'Alex' }],
-    questions: [
-      { id: 'q1', questioner: users[2], questionText: "What's your favorite programming language and why?", answerText: "Tough question! I love TypeScript for its safety and tooling, but Python will always have a special place in my heart for its simplicity.", timestamp: '3d ago'},
-      { id: 'q2', questioner: users[1], questionText: "Any tips for getting into software engineering?", timestamp: '5d ago'},
-    ]
   },
-  { 
-    id: '2', 
-    name: 'Bob', 
+  {
+    id: '2',
+    name: 'Bob',
     handle: 'bob',
-    avatarUrl: imageMap.get('avatar-2')!.imageUrl, 
+    avatarUrl: imageMap.get('avatar-2')!.imageUrl,
     bio: 'Designer, photographer, and coffee enthusiast. ☕',
     followers: 780,
     following: 500,
@@ -135,13 +130,13 @@ export const users: User[] = [
     work: { company: 'Creative Minds', position: 'Lead Designer' },
     education: { school: 'Yaba College of Technology', degree: 'Graphic Design' },
     relationshipStatus: 'Single',
-    hobbies: ['Photography', 'Latte Art', 'Traveling']
+    hobbies: ['Photography', 'Latte Art', 'Traveling'],
   },
-  { 
-    id: '3', 
-    name: 'Charlie', 
+  {
+    id: '3',
+    name: 'Charlie',
     handle: 'charlie',
-    avatarUrl: imageMap.get('avatar-3')!.imageUrl, 
+    avatarUrl: imageMap.get('avatar-3')!.imageUrl,
     bio: 'Just a dude who loves hiking. ⛰️',
     followers: 320,
     following: 180,
@@ -150,13 +145,13 @@ export const users: User[] = [
     work: { company: 'Adventure Co.', position: 'Tour Guide' },
     education: { school: 'Stellenbosch University', degree: 'Environmental Science' },
     relationshipStatus: 'Married',
-    hobbies: ['Hiking', 'Camping', 'Kayaking']
+    hobbies: ['Hiking', 'Camping', 'Kayaking'],
   },
-  { 
-    id: '4', 
-    name: 'Diana', 
+  {
+    id: '4',
+    name: 'Diana',
     handle: 'diana',
-    avatarUrl: imageMap.get('avatar-4')!.imageUrl, 
+    avatarUrl: imageMap.get('avatar-4')!.imageUrl,
     bio: 'Exploring the world one city at a time. 🌍',
     followers: 2100,
     following: 50,
@@ -166,13 +161,13 @@ export const users: User[] = [
     education: { school: 'University of Ghana', degree: 'Journalism' },
     website: 'https://dianatravels.com',
     relationshipStatus: 'Single',
-    hobbies: ['Blogging', 'Photography', 'Trying new foods']
+    hobbies: ['Blogging', 'Photography', 'Trying new foods'],
   },
-  { 
-    id: '5', 
-    name: 'You', 
+  {
+    id: '5',
+    name: 'You',
     handle: 'you',
-    avatarUrl: imageMap.get('avatar-5')!.imageUrl, 
+    avatarUrl: imageMap.get('avatar-5')!.imageUrl,
     bio: 'This is your bio. You can edit it!',
     followers: 42,
     following: 84,
@@ -183,11 +178,19 @@ export const users: User[] = [
     website: 'https://my-website.com',
     relationshipStatus: 'Single',
     hobbies: ['Next.js', 'React', 'Tailwind CSS'],
-    family: [{relation: "Mother", name:"Sarah"}],
-    questions: [
-        { id: 'q3', questioner: users[0], questionText: "What are you working on right now?", timestamp: '1d ago'}
-    ]
+    family: [{ relation: 'Mother', name: 'Sarah' }],
   },
+];
+
+export const users: User[] = usersData.map(u => ({...u, questions: []}));
+
+users[0].questions = [
+  { id: 'q1', questioner: users[2], questionText: "What's your favorite programming language and why?", answerText: "Tough question! I love TypeScript for its safety and tooling, but Python will always have a special place in my heart for its simplicity.", timestamp: '3d ago'},
+  { id: 'q2', questioner: users[1], questionText: "Any tips for getting into software engineering?", timestamp: '5d ago'},
+];
+
+users[4].questions = [
+  { id: 'q3', questioner: users[0], questionText: "What are you working on right now?", timestamp: '1d ago'}
 ];
 
 export const posts: Post[] = [
