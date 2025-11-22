@@ -15,7 +15,12 @@ import {
 import { users } from '@/lib/data';
 import { Badge } from './ui/badge';
 
-export default function CreatePost() {
+type CreatePostProps = {
+    onAddPost: (content: string, photoUrl: string | null) => void;
+};
+
+
+export default function CreatePost({ onAddPost }: CreatePostProps) {
   const [content, setContent] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +49,7 @@ export default function CreatePost() {
     try {
       // In a real app, if a photo is selected, you'd convert it to a data URI.
       // For this example, we'll pass undefined for photoDataUri.
-      const result = await filterContentAndSuggestHashtags({ content });
+      const result = await filterContentAndSuggestHashtags({ content: analysisResult ? analysisResult.filteredContent : content });
       if (!result.isContentAllowed) {
         toast({
           variant: 'destructive',
@@ -52,6 +57,7 @@ export default function CreatePost() {
           description: 'Your post violates our content policy and cannot be published.',
         });
       } else {
+        setContent(result.filteredContent);
         setAnalysisResult(result);
       }
     } catch (error) {
@@ -66,7 +72,10 @@ export default function CreatePost() {
   };
 
   const handlePublish = () => {
-    // In a real app, this would save the post to the database
+    if (!analysisResult) return;
+    
+    onAddPost(analysisResult.filteredContent, photo);
+    
     toast({
         title: 'Post Published!',
         description: "Your post is now live for your friends to see.",
