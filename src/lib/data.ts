@@ -34,12 +34,21 @@ export type Message = {
 }
 
 export type Conversation = {
-    id: string;
+    id:string;
     participant: User;
     messages: Message[];
     lastMessage: string;
     lastMessageTimestamp: string;
 }
+
+export type Notification = {
+  id: string;
+  user: User;
+  type: 'like' | 'comment' | 'friend_request';
+  post?: Post; // optional, for like/comment notifications
+  timestamp: string;
+  read: boolean;
+};
 
 export const users: User[] = [
   { id: '1', name: 'Alice', avatarUrl: imageMap.get('avatar-1')!.imageUrl, bio: 'Software Engineer and cat lover.' },
@@ -121,3 +130,37 @@ export const conversations: Conversation[] = [
         ]
     }
 ]
+
+export const notifications: Notification[] = [
+  {
+    id: 'n1',
+    user: users[3],
+    type: 'friend_request',
+    timestamp: '1h ago',
+    read: false,
+  },
+  {
+    id: 'n2',
+    user: users[1],
+    type: 'like',
+    post: posts[3],
+    timestamp: '3h ago',
+    read: false,
+  },
+  {
+    id: 'n3',
+    user: users[0],
+    type: 'comment',
+    post: posts[3],
+    timestamp: '6h ago',
+    read: true,
+  },
+  {
+    id: 'n4',
+    user: users[2],
+    type: 'like',
+    post: posts[1],
+    timestamp: '1d ago',
+    read: true,
+  },
+];

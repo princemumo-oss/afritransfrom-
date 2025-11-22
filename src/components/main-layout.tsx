@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -19,7 +19,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { users } from '@/lib/data';
+import { users, notifications } from '@/lib/data';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,6 +44,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       }
     }
   };
+
+  const unreadNotifications = notifications.filter(n => !n.read).length;
 
   return (
     <div className="flex min-h-screen w-full">
@@ -109,10 +115,53 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             />
           </div>
           <div className="ml-auto flex items-center gap-2">
-             <Button variant="ghost" size="icon" className="rounded-full">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Toggle notifications</span>
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative rounded-full">
+                  <Bell className="h-5 w-5" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute right-0 top-0 flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                    </span>
+                  )}
+                  <span className="sr-only">Toggle notifications</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <Card className="border-0 shadow-none">
+                  <CardHeader className='p-4'>
+                    <CardTitle>Notifications</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="flex flex-col">
+                      {notifications.map((notification, index) => (
+                        <div key={notification.id} className={cn("flex items-start gap-3 p-4", !notification.read && "bg-accent/50")}>
+                          <Avatar className="h-8 w-8 border">
+                              <AvatarImage src={notification.user.avatarUrl} alt={notification.user.name} />
+                              <AvatarFallback>{notification.user.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-sm">
+                              <p>
+                                  <span className="font-semibold">{notification.user.name}</span>
+                                  {notification.type === 'like' && ' liked your post.'}
+                                  {notification.type === 'comment' && ' commented on your post.'}
+                                  {notification.type === 'friend_request' && ' sent you a friend request.'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{notification.timestamp}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {notifications.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No new notifications.</p>}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-2 border-t">
+                      <Button variant="link" size="sm" className="w-full">Mark all as read</Button>
+                  </CardFooter>
+                </Card>
+              </PopoverContent>
+            </Popover>
+
             <Button variant="ghost" size="icon" className="rounded-full">
               <Settings className="h-5 w-5" />
               <span className="sr-only">Settings</span>
