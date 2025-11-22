@@ -50,7 +50,7 @@ export function BirthdayPicker({ value, onChange, disabled }: BirthdayPickerProp
     }
   }, [day, month, year, onChange]);
 
-  const numDays = month && year ? daysInMonth(parseInt(month), parseInt(year)) : 31;
+  const numDays = month !== '' && year !== '' ? daysInMonth(parseInt(month), parseInt(year)) : 31;
 
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -66,7 +66,7 @@ export function BirthdayPicker({ value, onChange, disabled }: BirthdayPickerProp
           ))}
         </SelectContent>
       </Select>
-      <Select value={day} onValueChange={setDay} disabled={disabled || !month || !year}>
+      <Select value={day} onValueChange={setDay} disabled={disabled || month === '' || year === ''}>
         <SelectTrigger>
           <SelectValue placeholder="Day" />
         </SelectTrigger>
