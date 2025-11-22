@@ -8,7 +8,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { PhoneOff, SkipForward, Video, VideoOff, Send, Mic, MicOff, Phone, PhoneIncoming } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { users } from '@/lib/data';
 import type { User } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -17,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { useChatBubbles } from '@/hooks/use-chat-bubbles';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { collection, onSnapshot, query, where, getDocs, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export default function ConnectPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -38,7 +37,8 @@ export default function ConnectPage() {
 
   const { startCall, joinCall, hangUp, localStream, remoteStream, isInCall, toggleMute, toggleVideo: toggleWebRTCVideo } = useWebRTC(localVideoRef, remoteVideoRef, currentUser?.uid);
 
-  const callsCollection = useMemoFirebase(() => collection(firestore, 'calls'), [firestore]);
+  const callsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'calls') : null, [firestore]);
+  const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
 
   useEffect(() => {
     if (!currentUser || !callsCollection) return;
@@ -46,11 +46,18 @@ export default function ConnectPage() {
     const q = query(callsCollection, where("answer", "==", null));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
+        snapshot.docChanges().forEach(async (change) => {
             if (change.type === "added") {
                 const callData = change.doc.data();
                 if(callData.offer.uid !== currentUser.uid) {
-                    setIncomingCall({ callId: change.doc.id, from: callData.offer.uid });
+                    // Check if there is an answer to ensure it's a call for us
+                    const receiverId = callData.calleeId;
+                    if (receiverId === currentUser.uid) {
+                        const userSnap = await getDoc(doc(firestore, 'users', callData.offer.uid));
+                        if(userSnap.exists()){
+                            setIncomingCall({ callId: change.doc.id, from: userSnap.data() as User });
+                        }
+                    }
                 }
             }
         });
@@ -58,7 +65,7 @@ export default function ConnectPage() {
 
     return () => unsubscribe();
 
-  }, [currentUser, callsCollection]);
+  }, [currentUser, callsCollection, firestore]);
 
 
   useEffect(() => {
@@ -75,25 +82,54 @@ export default function ConnectPage() {
   }, [remoteStream]);
   
   const handleStartCall = async () => {
-    if (!callsCollection || !currentUser) return;
+    if (!usersCollection || !currentUser) return;
     setIsConnecting(true);
-    const availableUsers = users.filter(u => u.id !== currentUser.uid);
-    const randomUser = availableUsers[Math.floor(Math.random() * availableUsers.length)];
-    setConnectedUser(randomUser);
 
-    await startCall(randomUser.id);
-    setIsConnecting(false);
-    toast({
-        title: 'Calling...',
-        description: `Calling ${randomUser.name}.`,
-    });
+    try {
+        const usersSnapshot = await getDocs(usersCollection);
+        const allUsers = usersSnapshot.docs
+            .map(doc => doc.data() as User)
+            .filter(u => u.id !== currentUser.uid);
+
+        if (allUsers.length === 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No one to call',
+                description: 'There are no other users available to call right now.',
+            });
+            setIsConnecting(false);
+            return;
+        }
+
+        const randomUser = allUsers[Math.floor(Math.random() * allUsers.length)];
+        setConnectedUser(randomUser);
+        
+        await startCall(randomUser.id);
+
+        toast({
+            title: 'Calling...',
+            description: `Calling ${randomUser.firstName}.`,
+        });
+
+    } catch (error) {
+        console.error("Error starting call:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Could not start call',
+            description: 'There was an issue finding a user to connect with.',
+        });
+    } finally {
+        setIsConnecting(false);
+    }
   }
   
   const handleAnswerCall = async () => {
     if(incomingCall){
         await joinCall(incomingCall.callId);
-        const caller = users.find(u => u.id === incomingCall.from);
-        setConnectedUser(caller || null);
+        const callerSnap = await getDoc(doc(firestore, 'users', incomingCall.from));
+        if (callerSnap.exists()){
+             setConnectedUser(callerSnap.data() as User);
+        }
         setIncomingCall(null);
     }
   }
@@ -114,13 +150,14 @@ export default function ConnectPage() {
       setIsVideoMuted(!isVideoMuted);
   }
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || !currentUser) return;
     
-    // In a real app, this would send the message over a WebSocket or WebRTC data channel.
-    const currentUserData = users.find(u => u.id === currentUser.uid);
-    if (!currentUserData) return;
+    const currentUserSnap = await getDoc(doc(firestore, 'users', currentUser.uid));
+    if (!currentUserSnap.exists()) return;
+    const currentUserData = currentUserSnap.data() as User;
+
 
     addBubble({
         user: currentUserData,
@@ -168,7 +205,7 @@ export default function ConnectPage() {
                     <>
                         <video ref={remoteVideoRef} className="h-full w-full object-cover" autoPlay />
                          <div className="absolute bottom-2 left-2 rounded-md bg-black/50 px-2 py-1 text-xs text-white">
-                            {connectedUser.name}
+                            {connectedUser.firstName}
                         </div>
                     </>
                 ) : (
@@ -254,5 +291,3 @@ export default function ConnectPage() {
     </MainLayout>
   );
 }
-
-    

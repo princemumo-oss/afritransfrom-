@@ -16,9 +16,9 @@ import { translateText } from '@/ai/flows/translate-text';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VoiceNotePlayer } from '@/components/voice-note-player';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -53,7 +53,7 @@ export default function MessagesPage() {
     const currentUserProfileQuery = useMemoFirebase(() => firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null, [firestore, firebaseUser]);
     const {data: currentUser} = useDoc<User>(currentUserProfileQuery);
 
-    const callsCollection = useMemoFirebase(() => collection(firestore, 'calls'), [firestore]);
+    const callsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'calls') : null, [firestore]);
 
      // Fetch conversations for the current user
     const conversationsQuery = useMemoFirebase(() => 
@@ -84,12 +84,12 @@ export default function MessagesPage() {
 
         fetchParticipants();
 
-    }, [conversationDocs, firebaseUser, selectedConversation]);
+    }, [conversationDocs, firebaseUser, selectedConversation, firestore]);
 
     // Fetch messages for the selected conversation
     const messagesQuery = useMemoFirebase(() => 
         selectedConversation ? query(collection(firestore, 'chats', selectedConversation.id, 'messages'), orderBy('createdAt', 'asc')) : null,
-        [selectedConversation]
+        [selectedConversation, firestore]
     );
     const { data: messages, isLoading: isLoadingMessages } = useCollection(messagesQuery);
 
@@ -97,31 +97,26 @@ export default function MessagesPage() {
     useEffect(() => {
         if (!currentUser || !callsCollection) return;
 
-        const q = query(callsCollection, where("answer", "==", null));
+        const q = query(callsCollection, where('calleeId', '==', currentUser.id), where("answer", "==", null));
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             for (const change of snapshot.docChanges()) {
                 if (change.type === "added") {
                     const callData = change.doc.data();
                     const offererId = callData.offer.uid;
-                    // Check if the call is for the current user and not initiated by the current user
-                    if (offererId !== currentUser.id) {
-                       const participantInCall = conversations.some(c => c.participant.id === offererId);
-                       if (participantInCall) {
-                         const userRef = doc(firestore, 'users', offererId);
-                         const userSnap = await getDoc(userRef);
-                         const fromUser = userSnap.data() as User;
-                         if (fromUser) {
-                             setIncomingCall({ callId: change.doc.id, from: fromUser });
-                         }
-                       }
+                    
+                    const userRef = doc(firestore, 'users', offererId);
+                    const userSnap = await getDoc(userRef);
+                    const fromUser = userSnap.data() as User;
+                    if (fromUser) {
+                        setIncomingCall({ callId: change.doc.id, from: fromUser });
                     }
                 }
             }
         });
 
         return () => unsubscribe();
-    }, [currentUser, callsCollection, conversations]);
+    }, [currentUser, callsCollection, firestore]);
 
      useEffect(() => {
         if (localStream && localVideoRef.current) {
@@ -135,8 +130,9 @@ export default function MessagesPage() {
         }
     }, [remoteStream]);
     
-    const handleStartCall = async () => {
+    const handleStartCall = async (callType: 'video' | 'audio') => {
         if (!selectedConversation) return;
+        // For simplicity, both start a video call. User can disable camera.
         await startCall(selectedConversation.participant.id);
         toast({
             title: 'Calling...',
@@ -191,7 +187,9 @@ export default function MessagesPage() {
       };
 
       const handleReaction = (messageId: string, reaction: string) => {
-        // Firestore update logic for reaction would go here
+        if (!selectedConversation) return;
+        const messageRef = doc(firestore, 'chats', selectedConversation.id, 'messages', messageId);
+        updateDoc(messageRef, { reaction });
       };
     
     const sendMessage = async (message: { content?: string, audioUrl?: string, audioDuration?: number }) => {
@@ -341,10 +339,10 @@ export default function MessagesPage() {
                         </div>
                         {!isInCall && (
                              <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="icon" onClick={handleStartCall}>
+                                <Button variant="ghost" size="icon" onClick={() => handleStartCall('audio')}>
                                     <Phone className="h-5 w-5" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={handleStartCall}>
+                                <Button variant="ghost" size="icon" onClick={() => handleStartCall('video')}>
                                     <Video className="h-5 w-5" />
                                 </Button>
                              </div>
@@ -378,6 +376,7 @@ export default function MessagesPage() {
                     ) : (
                     <>
                         <CardContent className="flex-1 overflow-y-auto p-4">
+                            <ScrollArea className="h-full">
                             <div className="space-y-6">
                                 {isLoadingMessages && <p className='text-center text-muted-foreground'>Loading messages...</p>}
                                 {messages?.map(message => (
@@ -458,7 +457,7 @@ export default function MessagesPage() {
                                                 </DropdownMenu>
                                             </div>
                                         </div>
-                                        {message.senderId === currentUser?.id && (
+                                        {message.senderId === currentUser?.id && currentUser &&(
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.firstName} />
                                                 <AvatarFallback>{currentUser.firstName.charAt(0)}</AvatarFallback>
@@ -467,6 +466,7 @@ export default function MessagesPage() {
                                     </div>
                                 ))}
                             </div>
+                            </ScrollArea>
                         </CardContent>
                         <div className="border-t p-4">
                             {isRecording ? (

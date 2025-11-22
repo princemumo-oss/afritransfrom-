@@ -2,7 +2,8 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import type { User } from '@/lib/data';
 
 const servers = {
   iceServers: [
@@ -51,6 +52,7 @@ export const useWebRTC = (
     });
 
     const callDoc = await addDoc(collection(firestore, 'calls'), {
+        calleeId,
         offer: {
             uid: currentUserId,
             sdp: '',
@@ -97,11 +99,14 @@ export const useWebRTC = (
 
     pc.current.ontrack = (event) => {
       setRemoteStream(event.streams[0]);
+      if(remoteVideoRef.current){
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
     };
 
     setIsInCall(true);
 
-  }, [setupStreams, firestore, currentUserId]);
+  }, [setupStreams, firestore, currentUserId, remoteVideoRef]);
 
   const joinCall = useCallback(async (callId: string) => {
     const stream = await setupStreams();
@@ -124,13 +129,18 @@ export const useWebRTC = (
 
     pc.current.ontrack = (event) => {
         setRemoteStream(event.streams[0]);
+        if(remoteVideoRef.current){
+            remoteVideoRef.current.srcObject = event.streams[0];
+        }
     };
 
-    const callSnapshot = await new Promise<any>((resolve) => onSnapshot(doc(firestore, 'calls', callId), resolve));
+    const callSnapshot = await getDoc(doc(firestore, 'calls', callId));
     const callData = callSnapshot.data();
-    const offerDescription = new RTCSessionDescription(callData.offer);
-    await pc.current.setRemoteDescription(offerDescription);
-
+    if (callData?.offer) {
+        const offerDescription = new RTCSessionDescription(callData.offer);
+        await pc.current.setRemoteDescription(offerDescription);
+    }
+    
     const answerDescription = await pc.current.createAnswer();
     await pc.current.setLocalDescription(answerDescription);
 
@@ -151,7 +161,7 @@ export const useWebRTC = (
 
     setIsInCall(true);
 
-  }, [setupStreams, firestore]);
+  }, [setupStreams, firestore, remoteVideoRef]);
 
   const hangUp = useCallback(async () => {
     if (pc.current) {
@@ -166,7 +176,11 @@ export const useWebRTC = (
     }
     
     if (callIdRef.current) {
-        await deleteDoc(doc(firestore, 'calls', callIdRef.current));
+        const callDocRef = doc(firestore, 'calls', callIdRef.current);
+        const callDoc = await getDoc(callDocRef);
+        if (callDoc.exists()) {
+            await deleteDoc(callDocRef);
+        }
     }
 
     setLocalStream(null);
@@ -198,5 +212,3 @@ export const useWebRTC = (
 
   return { startCall, joinCall, hangUp, localStream, remoteStream, isInCall, toggleMute, toggleVideo };
 };
-
-    
