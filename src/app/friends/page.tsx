@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, getDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Check, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { User } from '@/lib/data';
@@ -46,11 +46,11 @@ export default function FriendsPage() {
 
     // Friends
     const [friends, setFriends] = useState<User[]>([]);
-    const currentUserProfile = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
+    const currentUserProfileQuery = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
     
     useEffect(() => {
-        if (!currentUserProfile) return;
-        const unsub = onSnapshot(currentUserProfile, async (snap) => {
+        if (!currentUserProfileQuery) return;
+        const unsub = onSnapshot(currentUserProfileQuery, async (snap) => {
             const userData = snap.data();
             if (userData && userData.friends) {
                 const friendPromises = userData.friends.map((friendId: string) => getDoc(doc(firestore, 'users', friendId)));
@@ -60,7 +60,7 @@ export default function FriendsPage() {
             }
         });
         return () => unsub();
-    }, [currentUserProfile, firestore]);
+    }, [currentUserProfileQuery, firestore]);
 
 
     const handleRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
@@ -106,8 +106,8 @@ export default function FriendsPage() {
                                         <div className="flex items-center gap-4">
                                             <div className="relative">
                                                 <Avatar className="h-12 w-12">
-                                                    <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                                                    <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                                    <AvatarImage src={friend.avatarUrl} alt={`${friend.firstName} ${friend.lastName}`} />
+                                                    <AvatarFallback>{friend.firstName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                  {friend.onlineStatus === 'online' && (
                                                     <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-background bg-green-500" />
