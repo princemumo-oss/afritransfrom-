@@ -51,6 +51,13 @@
           "type": "string",
           "description": "Timestamp indicating when the user profile was last updated.",
           "format": "date-time"
+        },
+        "subscriptions": {
+          "type": "array",
+          "description": "An array of initiative IDs that the user is subscribed to.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -322,6 +329,13 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "subscribers": {
+          "type": "array",
+          "description": "An array of user IDs who are subscribed to this initiative.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["name", "description", "logoUrl", "submittedBy", "status", "createdAt"]

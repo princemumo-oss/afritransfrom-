@@ -1,5 +1,4 @@
 
-
 export type Badge = {
   name: string;
   description: string;
@@ -53,6 +52,7 @@ export type User = {
   }[];
   questions?: Question[];
   friends?: string[]; // Array of user IDs
+  subscriptions?: string[]; // Array of initiative IDs
 };
 
 export type Post = {
@@ -145,6 +145,7 @@ export type Initiative = {
     products?: Product[];
     status?: 'pending' | 'approved' | 'rejected';
     submittedBy?: string;
+    subscribers?: string[]; // Array of user IDs
 }
 export const sampleReels: Reel[] = [
   {

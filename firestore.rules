@@ -46,8 +46,7 @@ service cloud.firestore {
     match /initiatives/{initiativeId} {
       allow read: if resource.data.status == 'approved';
       allow create: if request.auth != null && request.resource.data.submittedBy == request.auth.uid;
-      // Only admins should be able to update (e.g., to approve)
-      allow update: if false; 
+      allow update: if request.auth != null; // Allow logged in users to subscribe/unsubscribe
       allow delete: if false;
     }
   }
