@@ -1,9 +1,10 @@
+
 'use client';
 
 import { MainLayout } from '@/components/main-layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Globe } from 'lucide-react';
+import { ExternalLink, Globe, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -50,6 +51,24 @@ export default function ShowcasePage() {
               </CardFooter>
             </Card>
           ))}
+            <Card className="flex flex-col border-dashed">
+              <CardHeader className="items-center text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary mb-4">
+                  <PlusCircle className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <CardTitle>Showcase Your Initiative</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 text-center">
+                <CardDescription>Want to feature your organization, ministry, or project? Contact us to learn more about partnership opportunities.</CardDescription>
+              </CardContent>
+              <CardFooter>
+                <Button asChild className="w-full" variant="secondary">
+                  <a href="mailto:showcase@afritransform.com">
+                    Contact Us
+                  </a>
+                </Button>
+              </CardFooter>
+            </Card>
         </div>
       </div>
     </MainLayout>
