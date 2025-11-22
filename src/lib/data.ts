@@ -5,6 +5,12 @@ const imageMap = new Map<string, ImagePlaceholder>(
   PlaceHolderImages.map((img) => [img.id, img])
 );
 
+export type Badge = {
+  name: string;
+  description: string;
+  icon: string;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -12,6 +18,9 @@ export type User = {
   verified?: boolean;
   avatarUrl: string;
   bio: string;
+  followers: number;
+  following: number;
+  badges?: Badge[];
   mood?: {
     emoji: string;
     text: string;
@@ -74,6 +83,13 @@ export type Notification = {
   read: boolean;
 };
 
+export const badges: { [key: string]: Badge } = {
+  'pioneer': { name: 'Pioneer', description: 'Joined in the first month.', icon: 'Rocket' },
+  'first-post': { name: 'First Post', description: 'Made your first post.', icon: 'Feather' },
+  'community-builder': { name: 'Community Builder', description: 'Reached 100 followers.', icon: 'Users' },
+};
+
+
 export const users: User[] = [
   { 
     id: '1', 
@@ -82,6 +98,9 @@ export const users: User[] = [
     verified: true,
     avatarUrl: imageMap.get('avatar-1')!.imageUrl, 
     bio: 'Software Engineer and cat lover. 🐈 #DevLife',
+    followers: 1500,
+    following: 250,
+    badges: [badges['pioneer'], badges['community-builder']],
     location: 'Nairobi, Kenya',
     work: { company: 'TechNova', position: 'Senior Developer' },
     education: { school: 'University of Cape Town', degree: 'Computer Science' },
@@ -96,6 +115,9 @@ export const users: User[] = [
     handle: 'bob',
     avatarUrl: imageMap.get('avatar-2')!.imageUrl, 
     bio: 'Designer, photographer, and coffee enthusiast. ☕',
+    followers: 780,
+    following: 500,
+    badges: [badges['first-post']],
     location: 'Lagos, Nigeria',
     work: { company: 'Creative Minds', position: 'Lead Designer' },
     education: { school: 'Yaba College of Technology', degree: 'Graphic Design' },
@@ -108,6 +130,9 @@ export const users: User[] = [
     handle: 'charlie',
     avatarUrl: imageMap.get('avatar-3')!.imageUrl, 
     bio: 'Just a dude who loves hiking. ⛰️',
+    followers: 320,
+    following: 180,
+    badges: [],
     location: 'Cape Town, South Africa',
     work: { company: 'Adventure Co.', position: 'Tour Guide' },
     education: { school: 'Stellenbosch University', degree: 'Environmental Science' },
@@ -120,6 +145,9 @@ export const users: User[] = [
     handle: 'diana',
     avatarUrl: imageMap.get('avatar-4')!.imageUrl, 
     bio: 'Exploring the world one city at a time. 🌍',
+    followers: 2100,
+    following: 50,
+    badges: [badges['pioneer']],
     location: 'Accra, Ghana',
     work: { company: 'Globe Trotters', position: 'Travel Blogger' },
     education: { school: 'University of Ghana', degree: 'Journalism' },
@@ -133,6 +161,9 @@ export const users: User[] = [
     handle: 'you',
     avatarUrl: imageMap.get('avatar-5')!.imageUrl, 
     bio: 'This is your bio. You can edit it!',
+    followers: 42,
+    following: 84,
+    badges: [badges['first-post']],
     location: 'Cairo, Egypt',
     work: { company: 'My Company', position: 'My Role' },
     education: { school: 'My University', degree: 'My Degree' },
