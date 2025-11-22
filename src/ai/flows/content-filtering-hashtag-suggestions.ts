@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -29,6 +30,7 @@ export type ContentFilteringAndHashtagSuggestionsInput = z.infer<
 const ContentFilteringAndHashtagSuggestionsOutputSchema = z.object({
   isContentAllowed: z.boolean().describe('Whether the content is allowed or not.'),
   filteredContent: z.string().describe('The content after filtering (if any).'),
+  enhancedContent: z.string().optional().describe('An AI-enhanced version of the post content.'),
   suggestedHashtags: z.array(z.string()).describe('Suggested hashtags for the post.'),
 });
 
@@ -46,11 +48,13 @@ const contentFilterAndHashtagPrompt = ai.definePrompt({
   name: 'contentFilterAndHashtagPrompt',
   input: {schema: ContentFilteringAndHashtagSuggestionsInputSchema},
   output: {schema: ContentFilteringAndHashtagSuggestionsOutputSchema},
-  prompt: `You are a content moderation and hashtag suggestion tool.
+  prompt: `You are a content moderation and social media assistant.
 
   Analyze the following content and determine if it is appropriate for a social media platform.  If it violates any content policies, set isContentAllowed to false.  The platform prohibits hate speech, harassment, sexually explicit content, dangerous content, and content that violates civic integrity. If the content is allowed, set isContentAllowed to true and return the original content in the filteredContent field.
 
-  Suggest relevant hashtags to increase the post's discoverability. Return them as an array of strings in the suggestedHashtags field.  Only suggest hashtags that are directly relevant to the content. Don't include generic hashtags like #instagood or #photooftheday.
+  Next, take the original content and rewrite it to be more engaging, descriptive, or interesting. Return this version in the 'enhancedContent' field. If you cannot improve the content, return the original content in this field.
+
+  Finally, suggest relevant hashtags to increase the post's discoverability. Return them as an array of strings in the suggestedHashtags field.  Only suggest hashtags that are directly relevant to the content. Don't include generic hashtags like #instagood or #photooftheday.
 
   Content: {{{content}}}
   {{#if photoDataUri}}

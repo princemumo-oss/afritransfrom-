@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Image as ImageIcon, Send, Loader2, Sparkles, X, Video } from 'lucide-react';
+import { Image as ImageIcon, Send, Loader2, Sparkles, X, Video, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   filterContentAndSuggestHashtags,
@@ -107,6 +107,7 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
           description: 'Your post violates our content policy and cannot be published.',
         });
       } else {
+        // Set filtered content, but don't automatically use enhanced content yet
         setContent(result.filteredContent);
         setAnalysisResult(result);
       }
@@ -125,7 +126,8 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
   const handlePublish = () => {
     if (!analysisResult) return;
     
-    onAddPost(analysisResult.filteredContent, media?.url ?? null, media?.type ?? null);
+    // Use the current content in the textarea for publishing
+    onAddPost(content, media?.url ?? null, media?.type ?? null);
     
     toast({
         title: 'Post Published!',
@@ -142,6 +144,12 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
   const addHashtag = (hashtag: string) => {
     setContent(prev => `${prev.trim()} ${hashtag}`);
   }
+  
+  const useEnhancedContent = () => {
+    if (analysisResult?.enhancedContent) {
+        setContent(analysisResult.enhancedContent);
+    }
+  }
 
   return (
     <Card>
@@ -157,7 +165,7 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="mb-2 min-h-24"
-              disabled={isLoading || !!analysisResult}
+              disabled={isLoading}
             />
             <input
               type="file"
@@ -189,32 +197,45 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
                   size="icon"
                   className="absolute top-2 right-2 h-7 w-7"
                   onClick={removeMedia}
-                  disabled={isLoading || !!analysisResult}
+                  disabled={isLoading}
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
             
-            {analysisResult && analysisResult.suggestedHashtags.length > 0 && (
-              <div className="my-4">
-                <p className="text-sm font-medium mb-2 text-muted-foreground">Suggested Hashtags (click to add):</p>
-                <div className="flex flex-wrap gap-2">
-                  {analysisResult.suggestedHashtags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="cursor-pointer hover:bg-accent" onClick={() => addHashtag(tag)}>
-                      {tag}
-                    </Badge>
-                  ))}
+            {analysisResult && (
+                <div className="my-4 space-y-4">
+                    {analysisResult.enhancedContent && analysisResult.enhancedContent !== content && (
+                         <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-900 dark:bg-yellow-950">
+                            <p className="text-sm font-medium mb-2 text-yellow-800 dark:text-yellow-200">AI Suggestion:</p>
+                            <p className="italic text-sm text-yellow-700 dark:text-yellow-300">"{analysisResult.enhancedContent}"</p>
+                            <Button size="sm" variant="outline" className="mt-2" onClick={useEnhancedContent}>
+                                <Wand2 className="mr-2 h-4 w-4" /> Use Suggestion
+                            </Button>
+                        </div>
+                    )}
+                    {analysisResult.suggestedHashtags.length > 0 && (
+                        <div>
+                            <p className="text-sm font-medium mb-2 text-muted-foreground">Suggested Hashtags (click to add):</p>
+                            <div className="flex flex-wrap gap-2">
+                            {analysisResult.suggestedHashtags.map(tag => (
+                                <Badge key={tag} variant="secondary" className="cursor-pointer hover:bg-accent" onClick={() => addHashtag(tag)}>
+                                {tag}
+                                </Badge>
+                            ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </div>
             )}
 
             <div className="flex justify-between items-center mt-2">
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={handlePhotoUpload} disabled={isLoading || !!analysisResult}>
+                    <Button variant="ghost" size="icon" onClick={handlePhotoUpload} disabled={isLoading}>
                         <ImageIcon className="h-5 w-5 text-green-500" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={handleVideoUpload} disabled={isLoading || !!analysisResult}>
+                    <Button variant="ghost" size="icon" onClick={handleVideoUpload} disabled={isLoading}>
                         <Video className="h-5 w-5 text-blue-500" />
                     </Button>
                 </div>
