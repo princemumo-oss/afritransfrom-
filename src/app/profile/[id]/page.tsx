@@ -1,13 +1,17 @@
+'use client';
+
+import { useState } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import PostCard from '@/components/post-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { users, posts as allPosts } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, Users } from 'lucide-react';
+import { users as initialUsers, posts as allPosts, type User } from '@/lib/data';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -20,10 +24,17 @@ function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string 
 }
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
+    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
     const userId = params.id === 'me' ? users.find(u => u.name === 'You')?.id : params.id;
     const user = users.find(u => u.id === userId);
     const userPosts = allPosts.filter(p => p.author.id === userId);
     const userFriends = users.filter(u => u.id !== userId && u.id !== '5'); // Exclude current user and 'You'
+
+    const handleProfileUpdate = (updatedUser: User) => {
+        setUsers(currentUsers => currentUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+    };
 
     if (!user) {
         return <MainLayout><div>User not found</div></MainLayout>;
@@ -45,9 +56,17 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                         </div>
                         <div className="mt-4 flex gap-2 sm:mt-0">
                             {params.id === 'me' ? (
-                                <Button>
-                                    <Pen className="mr-2 h-4 w-4" /> Edit Profile
-                                </Button>
+                                <>
+                                    <Button onClick={() => setIsEditDialogOpen(true)}>
+                                        <Pen className="mr-2 h-4 w-4" /> Edit Profile
+                                    </Button>
+                                    <EditProfileDialog
+                                        user={user}
+                                        open={isEditDialogOpen}
+                                        onOpenChange={setIsEditDialogOpen}
+                                        onProfileUpdate={handleProfileUpdate}
+                                    />
+                                </>
                             ) : (
                                 <Button>
                                     <UserPlus className="mr-2 h-4 w-4" /> Add Friend
@@ -131,8 +150,8 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                             <TabsContent value="family">
                                 {user.family && user.family.length > 0 ? (
                                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                                        {user.family.map(member => (
-                                            <Card key={member.name} className="p-4 text-center">
+                                        {user.family.map((member, index) => (
+                                            <Card key={index} className="p-4 text-center">
                                                 <p className="font-semibold">{member.name}</p>
                                                 <p className="text-sm text-muted-foreground">{member.relation}</p>
                                             </Card>
