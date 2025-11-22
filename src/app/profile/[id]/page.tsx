@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/main-layout';
 import PostCard from '@/components/post-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,7 +24,8 @@ function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string 
     );
 }
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage() {
+    const params = useParams<{ id: string }>();
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
