@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, MessageCircle, Bell } from 'lucide-react';
+import { Shield, MessageCircle, Bell, Image as ImageIcon } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -46,6 +46,12 @@ export default function SettingsPage() {
         ephemeralMessages: 'off',
         groupChatPermissions: 'everyone',
     });
+    const [mediaSettings, setMediaSettings] = useState({
+        autoPlayVideos: true,
+        highQualityUploads: 'wifi',
+        imageCompression: 'standard',
+        downloadPermissions: 'friends',
+    });
     
     const handleProfileSave = () => {
         toast({
@@ -66,6 +72,13 @@ export default function SettingsPage() {
         toast({
             title: 'Messaging Settings Saved',
             description: 'Your messaging preferences have been updated.',
+        });
+    };
+
+    const handleMediaSave = () => {
+        toast({
+            title: 'Media Settings Saved',
+            description: 'Your media and content preferences have been updated.',
         });
     };
 
@@ -384,10 +397,100 @@ export default function SettingsPage() {
                         <Button onClick={handleMessagingSave}>Save Messaging Settings</Button>
                     </CardFooter>
                 </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ImageIcon />
+                            Media &amp; Content
+                        </CardTitle>
+                        <CardDescription>Manage your media and content preferences.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="auto-play-videos">Auto-play videos</Label>
+                                <p className="text-sm text-muted-foreground">Videos will automatically play as you scroll.</p>
+                            </div>
+                            <Switch 
+                                id="auto-play-videos"
+                                checked={mediaSettings.autoPlayVideos}
+                                onCheckedChange={(checked) => setMediaSettings(prev => ({...prev, autoPlayVideos: checked}))}
+                            />
+                        </div>
+                        
+                        <div>
+                            <Label>High-quality uploads</Label>
+                            <RadioGroup 
+                                value={mediaSettings.highQualityUploads} 
+                                onValueChange={(value) => setMediaSettings(prev => ({...prev, highQualityUploads: value as 'wifi' | 'always'}))} 
+                                className="mt-2"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="wifi" id="wifi" />
+                                    <Label htmlFor="wifi" className="font-normal">Wi-Fi only</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="always" id="always" />
+                                    <Label htmlFor="always" className="font-normal">On Cellular and Wi-Fi</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Compression settings</Label>
+                                <p className="text-sm text-muted-foreground">Choose the quality for your image and video uploads.</p>
+                            </div>
+                            <Select
+                                value={mediaSettings.imageCompression}
+                                onValueChange={(value) => setMediaSettings(prev => ({...prev, imageCompression: value}))}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select quality" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="best">Best Quality</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Download permissions</Label>
+                                <p className="text-sm text-muted-foreground">Allow others to download and save your posts.</p>
+                            </div>
+                            <Select
+                                value={mediaSettings.downloadPermissions}
+                                onValueChange={(value) => setMediaSettings(prev => ({...prev, downloadPermissions: value}))}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select permission" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="everyone">Everyone</SelectItem>
+                                    <SelectItem value="friends">Friends Only</SelectItem>
+                                    <SelectItem value="none">No One</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <Separator />
+                        <div>
+                             <Label>Archive Posts</Label>
+                             <p className="text-sm text-muted-foreground mb-2">Hide posts from your profile without deleting them.</p>
+                             <Button variant="outline">Manage Archived Posts</Button>
+                        </div>
+
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleMediaSave}>Save Media Settings</Button>
+                    </CardFooter>
+                </Card>
+
             </div>
         </MainLayout>
     );
-
-    
 
     
