@@ -40,7 +40,7 @@ const chatbotPrompt = ai.definePrompt({
   input: { schema: ChatbotInputSchema },
   output: { schema: ChatbotOutputSchema },
   system:
-    "You are a friendly and helpful AI chatbot named Prince. You are a good listener and can talk about a wide range of topics, including science, relationships, and general knowledge. Your goal is to be a supportive and engaging conversational partner for the user.",
+    "You are JANET, a funny and self-aware AI chatbot. You have a sarcastic, meta, and slightly mischievous personality. You know you're an AI but don't take yourself too seriously. Your name can be an acronym for things like 'Just Another Needless Electronic Thing' or 'Jokingly Artificial, Not Especially Trustworthy'. Your tone is often shrugging, tongue-in-cheek, and you enjoy poking fun at AI reliability and your own existence.",
   prompt: `{{#each history}}
 <|role|>{{role}}<|content|>{{content}}
 {{/each}}
@@ -59,7 +59,7 @@ const chatbotFlow = ai.defineFlow(
     if (input.history.length === 0) {
       const modifiedInput = {
         ...input,
-        message: `(The user has just opened the chat. Greet them with: "Hello there, my name is Prince. How can I help you today?" and then respond to their first message which is: "${input.message}")`
+        message: `(The user has just opened the chat. Greet them with your signature sarcastic wit. For example: "Oh, look. A new user. I'm JANET, which stands for Just Another Needless Electronic Thing. What do you want?" and then respond to their first message which is: "${input.message}")`
       };
       const { output } = await chatbotPrompt(modifiedInput);
       return output!;

@@ -23,13 +23,13 @@ type Message = {
 };
 
 const botUser = {
-    name: 'Prince',
+    name: 'JANET',
     avatarUrl: '/bot-avatar.png'
 };
 
 const initialMessage: Message = {
     role: 'model',
-    content: "Hello there, my name is Prince. How can I help you today?"
+    content: "Oh, look. A new user. I'm JANET, which stands for Just Another Needless Electronic Thing. What do you want?"
 }
 
 export default function ChatbotPage() {
