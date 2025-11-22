@@ -5,12 +5,14 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Send, Loader2, Bot, User } from 'lucide-react';
+import { Send, Loader2, Bot, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { chatWithBot } from '@/ai/flows/chatbot';
-import { users } from '@/lib/data';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { User } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -34,8 +36,12 @@ export default function ChatbotPage() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-    const currentUser = users.find(u => u.name === 'You');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const { user: authUser } = useUser();
+    const firestore = useFirestore();
+    const currentUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [firestore, authUser]);
+    const { data: currentUser } = useDoc<User>(currentUserDocRef);
 
     useEffect(() => {
         // Scroll to the bottom when messages change
@@ -115,8 +121,8 @@ export default function ChatbotPage() {
                                             </div>
                                             {message.role === 'user' && currentUser && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                                                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                                                    <AvatarImage src={currentUser.avatarUrl} alt={currentUser.firstName} />
+                                                    <AvatarFallback>{currentUser.firstName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                             )}
                                         </div>
