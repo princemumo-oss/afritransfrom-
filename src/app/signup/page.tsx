@@ -101,6 +101,7 @@ export default function SignupPage() {
           updatedAt: serverTimestamp(),
           followers: 0,
           following: 0,
+          verificationStatus: 'not_requested',
         };
         // We use the non-blocking version to create the user profile.
         setDocumentNonBlocking(userProfileRef, userProfileData, {});
@@ -315,5 +316,7 @@ export default function SignupPage() {
 
 
 
+
+    
 
     

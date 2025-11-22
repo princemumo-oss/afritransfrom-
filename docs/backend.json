@@ -58,6 +58,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": ["not_requested", "pending_review", "pending_payment", "verified"],
+          "description": "The verification status of the user's profile."
         }
       },
       "required": [

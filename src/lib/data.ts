@@ -20,7 +20,7 @@ export type User = {
   lastName: string;
   email: string;
   handle: string;
-  verified?: boolean;
+  verificationStatus?: 'not_requested' | 'pending_review' | 'pending_payment' | 'verified';
   avatarUrl?: string;
   coverPhotoUrl?: string;
   bio?: string;
@@ -149,7 +149,7 @@ export type Initiative = {
         upcoming: InitiativeEvent[];
     },
     products?: Product[];
-    status?: 'pending' | 'approved' | 'rejected';
+    status?: 'pending' | 'approved' | 'rejected' | 'pending_payment';
     submittedBy?: string;
     subscribers?: string[]; // Array of user IDs
 }
@@ -188,3 +188,5 @@ export const sampleReels: Reel[] = [
     comments: 101,
   },
 ];
+
+    

@@ -244,7 +244,7 @@ export default function ProfilePage() {
                             <div className="mt-4 flex-1 text-center sm:ml-6 sm:text-left">
                                 <div className="flex items-center justify-center gap-2 sm:justify-start">
                                     <h1 className="text-3xl font-bold">{user.firstName} {user.lastName}</h1>
-                                    {user.verified && <CheckCircle className="h-6 w-6 text-primary" />}
+                                    {user.verificationStatus === 'verified' && <CheckCircle className="h-6 w-6 text-primary" />}
                                 </div>
                                 <div className="flex items-center justify-center gap-2 sm:justify-start">
                                     <p className="text-muted-foreground">@{user.handle}</p>
@@ -466,3 +466,5 @@ export default function ProfilePage() {
         </MainLayout>
     );
 }
+
+    

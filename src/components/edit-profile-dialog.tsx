@@ -35,10 +35,13 @@ import {
 } from '@/components/ui/select';
 import { type User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Trash, Camera, CheckCircle, HelpCircle } from 'lucide-react';
+import { Trash, Camera, CheckCircle, HelpCircle, DollarSign, Hourglass } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+
+// Placeholder for your actual PayPal payment link
+const VERIFICATION_PAYMENT_LINK = "https://www.paypal.com/paypalme/your-business-name";
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -71,7 +74,7 @@ interface EditProfileDialogProps {
   user: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileUpdate: (updatedUser: User) => void;
+  onProfileUpdate: (updatedUser: Partial<User>) => void;
 }
 
 export function EditProfileDialog({
@@ -122,6 +125,7 @@ export function EditProfileDialog({
   }
   
   const requestVerification = () => {
+    onProfileUpdate({ verificationStatus: 'pending_review' });
     toast({
       title: 'Verification Request Submitted',
       description: 'Your request for a verified badge is under review.',
@@ -130,6 +134,57 @@ export function EditProfileDialog({
 
   const avatarUrl = form.watch('avatarUrl');
   const coverPhotoUrl = form.watch('coverPhotoUrl');
+
+  const VerificationSection = () => {
+    switch (user.verificationStatus) {
+        case 'verified':
+            return (
+                <Alert variant="default">
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertTitle>You are verified!</AlertTitle>
+                    <AlertDescription>Your profile has a verified badge.</AlertDescription>
+                </Alert>
+            );
+        case 'pending_review':
+             return (
+                <Alert variant="outline">
+                    <Hourglass className="h-4 w-4" />
+                    <AlertTitle>Verification Pending</AlertTitle>
+                    <AlertDescription>Your verification request is currently under review by our team.</AlertDescription>
+                </Alert>
+             );
+        case 'pending_payment':
+            return (
+                <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertTitle className='font-bold'>Your Request is Approved!</AlertTitle>
+                    <AlertDescription>
+                        Complete the final step by paying the one-time verification fee of **$5**. Your badge will appear after payment confirmation.
+                    </AlertDescription>
+                     <div className='mt-4'>
+                        <Button asChild type="button">
+                            <a href={VERIFICATION_PAYMENT_LINK} target="_blank" rel="noopener noreferrer">
+                               <DollarSign className='mr-2 h-4 w-4' /> Proceed to Payment ($5)
+                            </a>
+                        </Button>
+                    </div>
+                </Alert>
+            );
+        case 'not_requested':
+        default:
+            return (
+                <Alert variant="outline">
+                    <HelpCircle className="h-4 w-4" />
+                    <AlertTitle>Request Verification</AlertTitle>
+                    <AlertDescription>
+                        Get a verified badge to show that your profile is authentic.
+                        <Button type="button" size="sm" className="mt-2" onClick={requestVerification}>Request Badge</Button>
+                    </AlertDescription>
+                </Alert>
+            );
+    }
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -410,24 +465,9 @@ export function EditProfileDialog({
 
             <div>
                 <FormLabel>Verification</FormLabel>
-                {user.verified ? (
-                     <Alert variant="default" className="mt-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <AlertTitle>You are verified!</AlertTitle>
-                        <AlertDescription>
-                            Your profile has a verified badge.
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <Alert variant="outline" className="mt-2">
-                        <HelpCircle className="h-4 w-4" />
-                        <AlertTitle>Request Verification</AlertTitle>
-                        <AlertDescription>
-                            Get a verified badge to show that your profile is authentic.
-                            <Button type="button" size="sm" className="mt-2" onClick={requestVerification}>Request Badge</Button>
-                        </AlertDescription>
-                    </Alert>
-                )}
+                <div className="mt-2">
+                  <VerificationSection />
+                </div>
             </div>
 
             <DialogFooter>
@@ -440,3 +480,5 @@ export function EditProfileDialog({
     </Dialog>
   );
 }
+
+    
