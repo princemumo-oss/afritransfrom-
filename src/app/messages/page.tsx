@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Message, type Conversation, type User } from '@/lib/data';
-import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus, Flame, Search } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
+import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus, Flame, Search, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export default function MessagesPage() {
 
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
     const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
+    const [isTranslatingToSend, setIsTranslatingToSend] = useState(false);
     const { toast } = useToast();
 
     const [isRecording, setIsRecording] = useState(false);
@@ -288,8 +289,8 @@ export default function MessagesPage() {
     };
 
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSendMessage = (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!newMessage.trim()) return;
         sendMessage({ content: newMessage });
         if (typingTimeoutRef.current) {
@@ -297,6 +298,25 @@ export default function MessagesPage() {
             typingTimeoutRef.current = null;
         }
     };
+    
+    const handleTranslateAndSend = async (language: string) => {
+        if (!newMessage.trim()) return;
+        setIsTranslatingToSend(true);
+        try {
+            const result = await translateText({ text: newMessage, targetLanguage: language });
+            sendMessage({ content: result.translatedText });
+        } catch (error) {
+            console.error("Translate & Send error:", error);
+            toast({
+                variant: 'destructive',
+                title: "Translation Failed",
+                description: "Could not send translated message."
+            });
+        } finally {
+            setIsTranslatingToSend(false);
+        }
+    };
+
 
     const addEmoji = (emoji: string) => {
         setNewMessage(prev => prev + emoji);
@@ -631,31 +651,57 @@ export default function MessagesPage() {
                                         </Button>
                                     ) : (
                                     <>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button type="button" variant="ghost" size="icon" className="absolute right-12 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
-                                                <Smile className="h-5 w-5" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-fit p-1">
-                                            <div className="grid grid-cols-6 gap-1">
-                                                {emojiSet.map(emoji => (
-                                                    <Button
-                                                        key={emoji}
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="rounded-full text-lg"
-                                                        onClick={() => addEmoji(emoji)}
-                                                    >
-                                                        {emoji}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <Button type="submit" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" disabled={!newMessage.trim()}>
-                                        <Send className="h-4 w-4" />
-                                    </Button>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button type="button" variant="ghost" size="icon" className="absolute right-20 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
+                                                    <Smile className="h-5 w-5" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-fit p-1">
+                                                <div className="grid grid-cols-6 gap-1">
+                                                    {emojiSet.map(emoji => (
+                                                        <Button
+                                                            key={emoji}
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="rounded-full text-lg"
+                                                            onClick={() => addEmoji(emoji)}
+                                                        >
+                                                            {emoji}
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                 <Button type="button" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-16 rounded-full" disabled={!newMessage.trim() || isTranslatingToSend}>
+                                                    {isTranslatingToSend ? <Loader2 className="h-4 w-4 animate-spin" /> : <> <Send className="h-4 w-4" /> <ChevronDown className="h-4 w-4" /> </>}
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleSendMessage()}>
+                                                    <Send className="mr-2 h-4 w-4" />
+                                                    <span>Send</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger>
+                                                        <Languages className="mr-2 h-4 w-4" />
+                                                        <span>Translate & Send</span>
+                                                    </DropdownMenuSubTrigger>
+                                                    <DropdownMenuPortal>
+                                                        <DropdownMenuSubContent>
+                                                            {availableLanguages.map(lang => (
+                                                                <DropdownMenuItem key={lang} onClick={() => handleTranslateAndSend(lang)}>
+                                                                    {lang}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuPortal>
+                                                </DropdownMenuSub>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </>
                                     )}
                                 </form>
@@ -680,5 +726,7 @@ export default function MessagesPage() {
 
 
 
+
+    
 
     
