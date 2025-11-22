@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTheme } from "next-themes"
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +19,12 @@ import { Shield, MessageCircle, Bell, Image as ImageIcon, ShieldCheck, Flag, Shi
 
 export default function SettingsPage() {
     const { toast } = useToast();
+    const { theme, setTheme } = useTheme();
     const currentUser = users.find(u => u.name === 'You');
 
     // States for various settings
     const [name, setName] = useState(currentUser?.name || 'You');
     const [bio, setBio] = useState(currentUser?.bio || 'This is your bio. You can edit it!');
-    const [theme, setTheme] = useState('system');
     const [notifications, setNotifications] = useState({
         friendRequests: true,
         comments: true,
@@ -495,7 +496,8 @@ export default function SettingsPage() {
                             <ShieldCheck />
                             Community &amp; Safety
                         </CardTitle>
-                        <CardDescription>Tools and resources to help you stay safe on the platform.</CardDescription>
+                        <CardDescription>Tools and.
+     resources to help you stay safe on the platform.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div>
