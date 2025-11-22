@@ -90,7 +90,11 @@ export type Conversation = {
     participant: User;
     messages: Message[];
     lastMessage: string;
-    lastMessageTimestamp: string;
+    lastMessageTimestamp: any;
+    streak?: {
+      count: number;
+      lastMessageTimestamp: any;
+    }
 }
 
 export type Notification = {
@@ -101,3 +105,6 @@ export type Notification = {
   timestamp: string;
   read: boolean;
 };
+
+
+    

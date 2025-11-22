@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import type { User } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +73,10 @@ export function NewChatDialog({ open, onOpenChange, onConversationSelect }: NewC
                 createdAt: serverTimestamp(),
                 lastMessage: '',
                 lastMessageTimestamp: null,
+                streak: {
+                    count: 0,
+                    lastMessageTimestamp: null
+                },
             });
             const userSnap = await getDoc(doc(firestore, 'users', targetUser.id));
 
@@ -144,3 +149,5 @@ export function NewChatDialog({ open, onOpenChange, onConversationSelect }: NewC
     </Dialog>
   );
 }
+
+    

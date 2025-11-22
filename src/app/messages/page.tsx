@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Message, type Conversation, type User } from '@/lib/data';
-import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus } from 'lucide-react';
+import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic, Phone, PhoneOff, VideoOff, MicOff, Video, PhoneIncoming, Plus, Flame } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
@@ -18,9 +18,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { VoiceNotePlayer } from '@/components/voice-note-player';
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { useWebRTC } from '@/hooks/use-webrtc';
-import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, addDoc, serverTimestamp, doc, getDoc, orderBy, updateDoc, Timestamp } from 'firebase/firestore';
 import { NewChatDialog } from '@/components/new-chat-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
+import { isSameDay, isYesterday, subDays } from 'date-fns';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -67,31 +68,39 @@ export default function MessagesPage() {
         firebaseUser ? query(collection(firestore, 'chats'), where('members', 'array-contains', firebaseUser.uid)) : null,
         [firestore, firebaseUser]
     );
-    const { data: conversationDocs, isLoading: isLoadingConversations } = useCollection(conversationsQuery);
 
-     useEffect(() => {
-        if (!conversationDocs || !firebaseUser) return;
-        
-        const fetchParticipants = async () => {
+    // This is a separate effect to listen to real-time updates for conversations
+    useEffect(() => {
+        if (!conversationsQuery || !firebaseUser) return;
+    
+        const unsubscribe = onSnapshot(conversationsQuery, async (snapshot) => {
             const convos = await Promise.all(
-                conversationDocs.map(async (convo) => {
-                    const participantId = convo.members.find((id: string) => id !== firebaseUser.uid);
+                snapshot.docs.map(async (convoDoc) => {
+                    const convoData = convoDoc.data();
+                    const participantId = convoData.members.find((id: string) => id !== firebaseUser.uid);
                     if (!participantId) return null;
                     const userRef = doc(firestore, 'users', participantId);
                     const userSnap = await getDoc(userRef);
-                    return { ...convo, participant: userSnap.data() };
+                    return { id: convoDoc.id, ...convoData, participant: userSnap.data() };
                 })
             );
             const validConvos = convos.filter(Boolean);
             setConversations(validConvos);
-            if (!selectedConversation && validConvos.length > 0) {
-                setSelectedConversation(validConvos[0]);
+
+            // Update selected conversation with new data
+             if (selectedConversation) {
+                const updatedSelected = validConvos.find(c => c.id === selectedConversation.id);
+                if (updatedSelected) {
+                    setSelectedConversation(updatedSelected);
+                }
+            } else if (validConvos.length > 0) {
+                 setSelectedConversation(validConvos[0]);
             }
-        };
+        });
+    
+        return () => unsubscribe();
+    }, [conversationsQuery, firebaseUser, firestore, selectedConversation]);
 
-        fetchParticipants();
-
-    }, [conversationDocs, firebaseUser, selectedConversation, firestore]);
 
     // Fetch messages for the selected conversation
     const messagesQuery = useMemoFirebase(() => 
@@ -215,20 +224,44 @@ export default function MessagesPage() {
         updateDoc(messageRef, { reaction });
       };
     
-    const sendMessage = async (message: { content?: string, audioUrl?: string, audioDuration?: number }) => {
-      if (!firebaseUser || !selectedConversation) return;
-
-      const messagesCol = collection(firestore, 'chats', selectedConversation.id, 'messages');
-      
-      await addDoc(messagesCol, {
-          ...message,
-          senderId: firebaseUser.uid,
-          createdAt: serverTimestamp()
-      });
-
-      setNewMessage('');
-      handleTyping(false);
-    }
+      const sendMessage = async (message: { content?: string, audioUrl?: string, audioDuration?: number }) => {
+        if (!firebaseUser || !selectedConversation) return;
+  
+        const now = new Date();
+        const chatRef = doc(firestore, 'chats', selectedConversation.id);
+        const messagesCol = collection(chatRef, 'messages');
+        
+        // Streak logic
+        let newStreak = 1;
+        const lastTimestamp = selectedConversation.streak?.lastMessageTimestamp?.toDate();
+        
+        if (lastTimestamp) {
+            if (isYesterday(lastTimestamp)) {
+                newStreak = (selectedConversation.streak?.count || 0) + 1;
+            } else if (isSameDay(lastTimestamp, now)) {
+                newStreak = selectedConversation.streak?.count || 1;
+            }
+        }
+  
+        // Update chat document with new streak and last message info
+        await updateDoc(chatRef, {
+            lastMessage: message.content ? message.content : 'Voice Message',
+            lastMessageTimestamp: serverTimestamp(),
+            streak: {
+                count: newStreak,
+                lastMessageTimestamp: serverTimestamp()
+            }
+        });
+  
+        await addDoc(messagesCol, {
+            ...message,
+            senderId: firebaseUser.uid,
+            createdAt: serverTimestamp()
+        });
+  
+        setNewMessage('');
+        handleTyping(false);
+      }
     
     const handleTyping = (isTyping: boolean) => {
         if (!selectedConversation || !firebaseUser) return;
@@ -354,7 +387,7 @@ export default function MessagesPage() {
                     <CardContent className="flex-1 p-0">
                         <ScrollArea className="h-full">
                             <div className="flex flex-col gap-1 p-2">
-                                {isLoadingConversations && <p className="text-center text-muted-foreground p-4">Loading...</p>}
+                                {isLoadingMessages && <p className="text-center text-muted-foreground p-4">Loading...</p>}
                                 {conversations.map(convo => (
                                     <button
                                         key={convo.id}
@@ -374,7 +407,15 @@ export default function MessagesPage() {
                                             <div className="font-semibold">{convo.participant.firstName} {convo.participant.lastName}</div>
                                             <div className="text-sm text-muted-foreground">{convo.lastMessage}</div>
                                         </div>
-                                        <div className="text-xs text-muted-foreground">{convo.lastMessageTimestamp}</div>
+                                        <div className="flex flex-col items-end text-xs text-muted-foreground">
+                                            <span>{convo.lastMessageTimestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            {convo.streak?.count > 0 && (
+                                                <div className="flex items-center gap-1 text-orange-500">
+                                                    <span>{convo.streak.count}</span>
+                                                    <Flame className="h-4 w-4" />
+                                                </div>
+                                            )}
+                                        </div>
                                     </button>
                                 ))}
                             </div>
@@ -614,5 +655,7 @@ export default function MessagesPage() {
         </MainLayout>
     );
 }
+
+    
 
     
