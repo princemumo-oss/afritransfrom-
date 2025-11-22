@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { Shield } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -29,8 +30,11 @@ export default function SettingsPage() {
         likes: false,
     });
     const [privacy, setPrivacy] = useState({
-        profileVisibility: 'public',
-        contentFilter: false,
+        postVisibility: 'public',
+        whoCanTag: 'everyone',
+        hideOnlineStatus: false,
+        sensitiveContentFilter: false,
+        locationSharing: true,
     });
     
     const handleProfileSave = () => {
@@ -152,18 +156,21 @@ export default function SettingsPage() {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Privacy & Safety</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <Shield />
+                            Privacy &amp; Safety
+                        </CardTitle>
                         <CardDescription>Control who can see your activity and content.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label>Profile Visibility</Label>
-                                <p className="text-sm text-muted-foreground">Control who can view your profile.</p>
+                                <Label>Control who can see your posts</Label>
+                                <p className="text-sm text-muted-foreground">Control who can view your profile and posts.</p>
                             </div>
                             <Select 
-                                value={privacy.profileVisibility}
-                                onValueChange={(value) => setPrivacy(prev => ({...prev, profileVisibility: value}))}
+                                value={privacy.postVisibility}
+                                onValueChange={(value) => setPrivacy(prev => ({...prev, postVisibility: value}))}
                             >
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select visibility" />
@@ -171,20 +178,67 @@ export default function SettingsPage() {
                                 <SelectContent>
                                     <SelectItem value="public">Public</SelectItem>
                                     <SelectItem value="friends">Friends Only</SelectItem>
-                                    <SelectItem value="private">Private</SelectItem>
+                                    <SelectItem value="private">Only Me</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Control who can tag or mention you</Label>
+                                <p className="text-sm text-muted-foreground">Choose who is allowed to tag you in photos or mention you.</p>
+                            </div>
+                            <Select
+                                value={privacy.whoCanTag}
+                                onValueChange={(value) => setPrivacy(prev => ({...prev, whoCanTag: value}))}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select option" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="everyone">Everyone</SelectItem>
+                                    <SelectItem value="friends">Friends Only</SelectItem>
+                                    <SelectItem value="no-one">No One</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label>Content Moderation</Label>
-                                <p className="text-sm text-muted-foreground">Filter sensitive content from your feed.</p>
+                                <Label htmlFor="hide-online-status">Hide online status</Label>
+                                <p className="text-sm text-muted-foreground">Prevent others from seeing when you're online or last seen.</p>
                             </div>
                             <Switch 
-                                id="content-filter"
-                                checked={privacy.contentFilter}
-                                onCheckedChange={(checked) => setPrivacy(prev => ({...prev, contentFilter: checked}))}
+                                id="hide-online-status"
+                                checked={privacy.hideOnlineStatus}
+                                onCheckedChange={(checked) => setPrivacy(prev => ({...prev, hideOnlineStatus: checked}))}
                             />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="location-sharing">Location Sharing Toggle</Label>
+                                <p className="text-sm text-muted-foreground">Enable or disable sharing of your location in posts.</p>
+                            </div>
+                            <Switch 
+                                id="location-sharing"
+                                checked={privacy.locationSharing}
+                                onCheckedChange={(checked) => setPrivacy(prev => ({...prev, locationSharing: checked}))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="sensitive-content-filter">Sensitive Content Filters</Label>
+                                <p className="text-sm text-muted-foreground">AI-assisted moderation to filter sensitive content from your feed.</p>
+                            </div>
+                            <Switch 
+                                id="sensitive-content-filter"
+                                checked={privacy.sensitiveContentFilter}
+                                onCheckedChange={(checked) => setPrivacy(prev => ({...prev, sensitiveContentFilter: checked}))}
+                            />
+                        </div>
+                         <Separator />
+                        <div>
+                             <Label>Block / Mute Users</Label>
+                             <p className="text-sm text-muted-foreground mb-2">Manage users you have blocked or muted.</p>
+                             <Button variant="outline">Manage Blocked Users</Button>
                         </div>
                     </CardContent>
                      <CardFooter>
