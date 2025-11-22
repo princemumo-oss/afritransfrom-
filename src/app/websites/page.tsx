@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, PlusCircle, Loader2, Search, Bell, BellOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Initiative, User } from '@/lib/data';
 import { Input } from '@/components/ui/input';
