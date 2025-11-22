@@ -4,8 +4,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
-  title: 'LinkUp',
-  description: 'A classic social networking app for connecting with friends.',
+  title: 'afritransform',
+  description: 'A social networking app for connecting with friends.',
 };
 
 export default function RootLayout({

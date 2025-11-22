@@ -52,7 +52,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72" />
             </svg>
-            <span className="group-data-[collapsible=icon]:hidden">LinkUp</span>
+            <span className="group-data-[collapsible=icon]:hidden">afritransform</span>
           </Link>
         </SidebarHeader>
         <SidebarContent className="flex-1 p-2">
