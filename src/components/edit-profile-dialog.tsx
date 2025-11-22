@@ -41,7 +41,7 @@ import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 // Placeholder for your actual PayPal payment link
-const VERIFICATION_PAYMENT_LINK = "https://www.paypal.com/paypalme/your-business-name";
+const VERIFICATION_PAYMENT_LINK = "https://paypal.me/afritransform";
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),

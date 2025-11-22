@@ -37,7 +37,7 @@ const productSchema = z.object({
 });
 
 // A placeholder for your actual PayPal payment link
-const PAYPAL_PAYMENT_LINK = "https://www.paypal.com/paypalme/your-business-name";
+const PAYPAL_PAYMENT_LINK = "https://paypal.me/afritransform";
 
 export default function ManageWebsitesPage() {
     const { user: authUser } = useUser();
