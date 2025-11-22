@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, use, useEffect } from 'react';
@@ -40,7 +41,7 @@ export default function ProfilePage() {
     const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
 
     // This is a workaround for a Next.js bug with dynamic routes in App Router.
-    const id = use(Promise.resolve(params.id));
+    const id = params.id;
 
     const userId = id === 'me' ? users.find(u => u.name === 'You')?.id : id;
     const user = users.find(u => u.id === userId);
