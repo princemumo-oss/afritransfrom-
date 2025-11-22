@@ -1,3 +1,4 @@
+
 import type { ImagePlaceholder } from './placeholder-images';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -75,6 +76,8 @@ export type Message = {
     content: string;
     timestamp: string;
     reaction?: string;
+    audioUrl?: string;
+    audioDuration?: number; // duration in seconds
 }
 
 export type Conversation = {

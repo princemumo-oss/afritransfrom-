@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { conversations as initialConversations, users, type Message, type Conversation } from '@/lib/data';
-import { Send, Smile, Languages, Loader2, MoreHorizontal } from 'lucide-react';
+import { Send, Smile, Languages, Loader2, MoreHorizontal, Mic } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { VoiceNotePlayer } from '@/components/voice-note-player';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
@@ -30,6 +31,11 @@ export default function MessagesPage() {
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
     const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
     const { toast } = useToast();
+
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingStartTimeRef = useRef<number | null>(null);
 
     const handleTranslate = async (messageId: string, content: string, language: string) => {
         setTranslatingMessageId(messageId);
@@ -73,39 +79,92 @@ export default function MessagesPage() {
         }
       };
     
+    const sendMessage = (message: Omit<Message, 'id' | 'sender' | 'timestamp'>) => {
+      if (!currentUser) return;
+
+      const finalMessage: Message = {
+          ...message,
+          id: `m${Date.now()}`,
+          sender: currentUser,
+          timestamp: 'Just now'
+      };
+
+      const updatedConversations = conversations.map(convo => {
+          if (convo.id === selectedConversation.id) {
+              return {
+                  ...convo,
+                  messages: [...convo.messages, finalMessage],
+                  lastMessage: finalMessage.audioUrl ? 'Voice Note' : finalMessage.content,
+                  lastMessageTimestamp: 'Just now',
+              };
+          }
+          return convo;
+      });
+
+      setConversations(updatedConversations);
+      const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
+      if (updatedSelectedConvo) {
+          setSelectedConversation(updatedSelectedConvo);
+      }
+      setNewMessage('');
+    }
+
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !currentUser) return;
-
-        const message: Message = {
-            id: `m${Date.now()}`,
-            sender: currentUser,
-            content: newMessage,
-            timestamp: 'Just now'
-        };
-
-        const updatedConversations = conversations.map(convo => {
-            if (convo.id === selectedConversation.id) {
-                return {
-                    ...convo,
-                    messages: [...convo.messages, message],
-                    lastMessage: newMessage,
-                    lastMessageTimestamp: 'Just now',
-                };
-            }
-            return convo;
-        });
-
-        setConversations(updatedConversations);
-        const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
-        if (updatedSelectedConvo) {
-            setSelectedConversation(updatedSelectedConvo);
-        }
-        setNewMessage('');
+        if (!newMessage.trim()) return;
+        sendMessage({ content: newMessage });
     };
 
     const addEmoji = (emoji: string) => {
         setNewMessage(prev => prev + emoji);
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+            
+            mediaRecorderRef.current.ondataavailable = event => {
+                audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const duration = recordingStartTimeRef.current ? (Date.now() - recordingStartTimeRef.current) / 1000 : 0;
+                
+                sendMessage({
+                    content: '',
+                    audioUrl,
+                    audioDuration: Math.round(duration)
+                });
+                
+                // Clean up stream
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            mediaRecorderRef.current.start();
+            recordingStartTimeRef.current = Date.now();
+            setIsRecording(true);
+            toast({ title: "Recording started..." });
+
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            toast({
+                variant: 'destructive',
+                title: "Microphone Access Denied",
+                description: "Please allow microphone access in your browser settings."
+            });
+        }
+    };
+    
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            toast({ title: "Recording stopped." });
+        }
     };
 
     return (
@@ -172,7 +231,11 @@ export default function MessagesPage() {
                                     )}
                                     <div className="relative">
                                         <div className={cn('max-w-xs rounded-lg p-3 lg:max-w-md', message.sender.id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-                                            <p>{message.content}</p>
+                                           {message.audioUrl ? (
+                                                <VoiceNotePlayer src={message.audioUrl} duration={message.audioDuration ?? 0} />
+                                           ) : (
+                                                <p>{message.content}</p>
+                                           )}
                                             {translatedMessages[message.id] && (
                                                  <div className="mt-2 border-t pt-2">
                                                     <p className="whitespace-pre-wrap text-sm italic">{translatedMessages[message.id]}</p>
@@ -212,7 +275,7 @@ export default function MessagesPage() {
                                              </Popover>
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" disabled={translatingMessageId === message.id}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" disabled={translatingMessageId === message.id || !!message.audioUrl}>
                                                         {translatingMessageId === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                                                     </Button>
                                                 </DropdownMenuTrigger>
@@ -247,39 +310,57 @@ export default function MessagesPage() {
                         </div>
                     </CardContent>
                     <div className="border-t p-4">
-                        <form onSubmit={handleSendMessage} className="relative">
-                            <Input
-                                placeholder="Type a message..."
-                                className="pr-20 rounded-full"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                            />
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="absolute right-12 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
-                                        <Smile className="h-5 w-5" />
+                        {isRecording ? (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-red-500">
+                                    <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse"></div>
+                                    <span>Recording...</span>
+                                </div>
+                                <Button onClick={stopRecording}>Stop</Button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSendMessage} className="relative">
+                                <Input
+                                    placeholder="Type a message..."
+                                    className="pr-20 rounded-full"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                />
+                                {newMessage.trim() === '' ? (
+                                    <Button type="button" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" onClick={startRecording}>
+                                        <Mic className="h-4 w-4" />
                                     </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-fit p-1">
-                                    <div className="grid grid-cols-6 gap-1">
-                                        {emojiSet.map(emoji => (
-                                            <Button
-                                                key={emoji}
-                                                variant="ghost"
-                                                size="icon"
-                                                className="rounded-full text-lg"
-                                                onClick={() => addEmoji(emoji)}
-                                            >
-                                                {emoji}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                            <Button type="submit" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" disabled={!newMessage.trim()}>
-                                <Send className="h-4 w-4" />
-                            </Button>
-                        </form>
+                                ) : (
+                                <>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button type="button" variant="ghost" size="icon" className="absolute right-12 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full">
+                                            <Smile className="h-5 w-5" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-fit p-1">
+                                        <div className="grid grid-cols-6 gap-1">
+                                            {emojiSet.map(emoji => (
+                                                <Button
+                                                    key={emoji}
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="rounded-full text-lg"
+                                                    onClick={() => addEmoji(emoji)}
+                                                >
+                                                    {emoji}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button type="submit" size="icon" className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full" disabled={!newMessage.trim()}>
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                                </>
+                                )}
+                            </form>
+                        )}
                     </div>
                 </Card>
             </div>
