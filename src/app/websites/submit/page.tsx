@@ -22,7 +22,6 @@ import Link from 'next/link';
 const initiativeSchema = z.object({
   name: z.string().min(3, 'Initiative name must be at least 3 characters.'),
   description: z.string().min(20, 'Description must be at least 20 characters.').max(200, 'Description cannot exceed 200 characters.'),
-  websiteUrl: z.string().url('Please enter a valid website URL.'),
   logoUrl: z.string().url('Please upload a logo.'),
 });
 
@@ -42,7 +41,6 @@ export default function SubmitInitiativePage() {
     defaultValues: {
       name: '',
       description: '',
-      websiteUrl: '',
       logoUrl: '',
     },
   });
@@ -152,19 +150,6 @@ export default function SubmitInitiativePage() {
                       <FormLabel>Short Description</FormLabel>
                       <FormControl>
                         <Textarea placeholder="Briefly describe your initiative's mission and goals." {...field} disabled={isSubmitting} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="websiteUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com" {...field} disabled={isSubmitting} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
