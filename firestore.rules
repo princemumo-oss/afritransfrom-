@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -40,6 +41,14 @@ service cloud.firestore {
     
     match /stories/{storyId} {
        allow read, write: if request.auth != null;
+    }
+
+    match /initiatives/{initiativeId} {
+      allow read: if resource.data.status == 'approved';
+      allow create: if request.auth != null && request.resource.data.submittedBy == request.auth.uid;
+      // Only admins should be able to update (e.g., to approve)
+      allow update: if false; 
+      allow delete: if false;
     }
   }
 }

@@ -5,16 +5,18 @@
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { MainLayout } from '@/components/main-layout';
-import { showcasedInitiatives, type InitiativeEvent, type Product } from '@/lib/data';
+import { type InitiativeEvent, type Product, type ShowcaseInitiative } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { ExternalLink, ArrowLeft, ShoppingCart, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-function MediaGallery({ events }: { events: InitiativeEvent[] }) {
-  if (events.length === 0) {
+function MediaGallery({ events }: { events: InitiativeEvent[] | undefined }) {
+  if (!events || events.length === 0) {
     return <p className="text-center text-muted-foreground">No events to display.</p>;
   }
 
@@ -55,7 +57,7 @@ function MediaGallery({ events }: { events: InitiativeEvent[] }) {
   );
 }
 
-function ProductGallery({ products }: { products: Product[] }) {
+function ProductGallery({ products }: { products: Product[] | undefined }) {
     if (!products || products.length === 0) {
         return <p className="text-center text-muted-foreground">No products available at this time.</p>;
     }
@@ -89,7 +91,24 @@ function ProductGallery({ products }: { products: Product[] }) {
 
 export default function InitiativeDetailPage() {
   const params = useParams();
-  const initiative = showcasedInitiatives.find((site) => site.id === params.id);
+  const initiativeId = params.id as string;
+  const firestore = useFirestore();
+
+  const initiativeDocRef = useMemoFirebase(() => 
+    firestore && initiativeId ? doc(firestore, 'initiatives', initiativeId) : null,
+    [firestore, initiativeId]
+  );
+  const { data: initiative, isLoading } = useDoc<ShowcaseInitiative>(initiativeDocRef);
+
+  if (isLoading) {
+    return (
+        <MainLayout>
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        </MainLayout>
+    );
+  }
 
   if (!initiative) {
     return (
@@ -117,16 +136,16 @@ export default function InitiativeDetailPage() {
         </Button>
         <Card className="overflow-hidden">
           <CardHeader className="flex flex-col items-center gap-6 p-6 text-center md:flex-row md:text-left">
-            <Image src={initiative.logoUrl} alt={`${initiative.name} logo`} width={96} height={96} className="flex-shrink-0 rounded-full" />
+            <Image src={initiative.logoUrl} alt={`${initiative.name} logo`} width={96} height={96} className="flex-shrink-0 rounded-full object-cover" />
             <div className="space-y-1.5">
               <CardTitle className="text-3xl">{initiative.name}</CardTitle>
               <CardDescription>{initiative.description}</CardDescription>
             </div>
             <div className="flex-shrink-0 md:ml-auto">
                 <Button asChild>
-                    <Link href={initiative.href} target="_blank" rel="noopener noreferrer">
-                        {initiative.cta} <ExternalLink className="ml-2 h-4 w-4" />
-                    </Link>
+                    <a href={initiative.websiteUrl} target="_blank" rel="noopener noreferrer">
+                        Visit Website <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
                 </Button>
             </div>
           </CardHeader>
@@ -138,10 +157,10 @@ export default function InitiativeDetailPage() {
                 <TabsTrigger value="products">Products</TabsTrigger>
               </TabsList>
               <TabsContent value="past-events" className="mt-4">
-                <MediaGallery events={initiative.events.past} />
+                <MediaGallery events={initiative.events?.past} />
               </TabsContent>
               <TabsContent value="upcoming-events" className="mt-4">
-                <MediaGallery events={initiative.events.upcoming} />
+                <MediaGallery events={initiative.events?.upcoming} />
               </TabsContent>
               <TabsContent value="products" className="mt-4">
                 <ProductGallery products={initiative.products || []} />

@@ -136,83 +136,16 @@ export type ShowcaseInitiative = {
     name: string;
     description: string;
     logoUrl: string;
-    href: string;
-    cta: string;
+    websiteUrl: string;
+    cta?: string;
     events: {
         past: InitiativeEvent[];
         upcoming: InitiativeEvent[];
     },
     products?: Product[];
+    status?: 'pending' | 'approved' | 'rejected';
+    submittedBy?: string;
 }
-
-export const showcasedInitiatives: ShowcaseInitiative[] = [
-  {
-    id: 'arise-africa',
-    name: 'Arise Africa Initiative',
-    description: 'Follow the President of Arise Africa, Bishop John Munyasya Kimanzi, for updates, teachings, and guidance on how to join the movement.',
-    logoUrl: '/arise-africa-logo.png',
-    href: 'https://www.facebook.com/johnmunyasyakimanzi',
-    cta: 'Follow on Facebook',
-    events: {
-        past: [
-            {
-                title: "Launch Event 2017",
-                description: "The official launch of the Arise Africa Movement with 118 attendees.",
-                url: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjcm93ZCUyMGV2ZW50fGVufDB8fHx8MTc2Mzc4ODQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-                type: 'image'
-            },
-            {
-                title: "Nigeria Conference 2019",
-                description: "A powerful conference held in Lagos, Nigeria, uniting leaders from across West Africa.",
-                url: "https://storage.googleapis.com/static.afritransform.com/pexels-gabby-k-7095643.mp4",
-                type: 'video'
-            },
-            {
-                title: "Leadership Training in Kenya",
-                description: "Intensive training session for the next generation of leaders in Nairobi.",
-                url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWFkZXJzaGlwJTIwY29uZmVyZW5jZXxlbnwwfHx8fDE3NjM3ODg1MjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-                type: 'image'
-            },
-        ],
-        upcoming: [
-             {
-                title: "Global Summit 2024",
-                description: "Join us for our first global summit, bringing together leaders from Africa and beyond.",
-                url: "https://images.unsplash.com/photo-1561489396-888724a1543d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxnbG9iYWwlMjBzdW1taXR8ZW58MHx8fHwxNzYzNzg4NTgxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-                type: 'image'
-            }
-        ]
-    },
-    products: [
-        {
-            id: 'book-1',
-            name: 'The Vision Bearer',
-            description: 'A book by Bishop John Munyasya Kimanzi on leadership and vision.',
-            price: '$15.00',
-            imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxib29rJTIwY292ZXJ8ZW58MHx8fHwxNzYzNzg5MDAyfDA&ixlib=rb-4.1.0&q=80&w=1080',
-            purchaseUrl: '#'
-        },
-        {
-            id: 'tshirt-1',
-            name: 'Arise Africa T-Shirt',
-            description: 'Official initiative t-shirt. High-quality cotton.',
-            price: '$25.00',
-            imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0c2hpcnR8ZW58MHx8fHwxNzYzNzg5MDIxfDA&ixlib=rb-4.1.0&q=80&w=1080',
-            purchaseUrl: '#'
-        },
-        {
-            id: 'mug-1',
-            name: 'Initiative Mug',
-            description: 'Start your day with the vision. Ceramic 11oz mug.',
-            price: '$12.00',
-            imageUrl: 'https://images.unsplash.com/photo-1510626176961-4bce7e6f0083?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtdWd8ZW58MHx8fHwxNzYzNzg5MDM4fDA&ixlib=rb-4.1.0&q=80&w=1080',
-            purchaseUrl: '#'
-        }
-    ]
-  },
-];
-
-
 export const sampleReels: Reel[] = [
   {
     id: '1',
