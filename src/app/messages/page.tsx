@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -324,9 +323,14 @@ export default function MessagesPage() {
                             <div className="font-semibold">{selectedConversation.participant.name}</div>
                         </div>
                         {!isInCall && (
-                            <Button variant="ghost" size="icon" onClick={handleStartCall}>
-                                <Phone className="h-5 w-5" />
-                            </Button>
+                             <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" onClick={handleStartCall}>
+                                    <Phone className="h-5 w-5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={handleStartCall}>
+                                    <Video className="h-5 w-5" />
+                                </Button>
+                             </div>
                         )}
                     </CardHeader>
 
@@ -506,4 +510,3 @@ export default function MessagesPage() {
         </MainLayout>
     );
 }
-
