@@ -13,7 +13,7 @@ const reels = [
   {
     id: 1,
     user: users[0],
-    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-man-in-blue-suit-jacket-standing-on-stage-in-front-of-people-in-a-concert-6689035%20(2160p).mp4',
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-ron-lach-8128761%20(2160p).mp4',
     caption: 'Best concert of my life! The energy was insane 🔥 #livemusic #concert',
     audio: 'Original Audio by @alice',
     likes: '12.3k',
@@ -22,7 +22,7 @@ const reels = [
   {
     id: 2,
     user: users[1],
-    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-pressmaster-10147427%20(2160p).mp4',
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-alena-darmel-7725994%20(2160p).mp4',
     caption: 'Morning coffee routine ☕️ What\'s your go-to brew?',
     audio: 'lofi hip hop - chill beats to relax/study to',
     likes: '5,8k',
@@ -31,7 +31,7 @@ const reels = [
   {
     id: 3,
     user: users[2],
-    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-lital-levi-19253459%20(2160p).mp4',
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-gabby-k-5359739%20(1080p).mp4',
     caption: 'Exploring the great outdoors. Nothing beats this view. #hiking #nature',
     audio: 'Upbeat Acoustic - SunnyDays',
     likes: '22.1k',
@@ -125,4 +125,3 @@ export default function ReelsPage() {
     </MainLayout>
   );
 }
-
