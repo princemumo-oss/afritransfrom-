@@ -4,20 +4,10 @@
 import { MainLayout } from '@/components/main-layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Globe, PlusCircle } from 'lucide-react';
+import { ArrowRight, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-
-const showcasedWebsites = [
-  {
-    name: 'Arise Africa Initiative',
-    description: 'Follow the President of Arise Africa, Bishop John Munyasya Kimanzi, for updates, teachings, and guidance on how to join the movement.',
-    logoUrl: '/arise-africa-logo.png',
-    href: 'https://www.facebook.com/johnmunyasyakimanzi',
-    cta: 'Follow on Facebook',
-  },
-  // Add more websites here in the future
-];
+import { showcasedInitiatives } from '@/lib/data';
 
 export default function ShowcasePage() {
   return (
@@ -31,29 +21,31 @@ export default function ShowcasePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {showcasedWebsites.map((site) => (
-            <Card key={site.name} className="flex flex-col">
-              <CardHeader className="items-center text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
-                  <Image src={site.logoUrl} alt={`${site.name} logo`} width={64} height={64} className="rounded-full" />
-                </div>
-                <CardTitle>{site.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 text-center">
-                <CardDescription>{site.description}</CardDescription>
-              </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <Link href={site.href} target="_blank" rel="noopener noreferrer">
-                    {site.cta} <ExternalLink className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+          {showcasedInitiatives.map((site) => (
+             <Link href={`/showcase/${site.id}`} key={site.id} className="group">
+                <Card className="flex h-full flex-col transition-all group-hover:shadow-lg group-hover:-translate-y-1">
+                <CardHeader className="items-center text-center">
+                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                    <Image src={site.logoUrl} alt={`${site.name} logo`} width={64} height={64} className="rounded-full" />
+                    </div>
+                    <CardTitle>{site.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 text-center">
+                    <CardDescription>{site.description}</CardDescription>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                        <div>
+                         Explore Initiative <ArrowRight className="ml-2 h-4 w-4" />
+                        </div>
+                    </Button>
+                </CardFooter>
+                </Card>
+            </Link>
           ))}
             <Card className="flex flex-col border-dashed">
               <CardHeader className="items-center text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary mb-4">
+                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
                   <PlusCircle className="h-10 w-10 text-muted-foreground" />
                 </div>
                 <CardTitle>Showcase Your Initiative</CardTitle>
