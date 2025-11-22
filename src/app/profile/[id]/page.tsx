@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -277,7 +275,7 @@ export default function ProfilePage() {
                             <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="posts">Posts</TabsTrigger>
                                 <TabsTrigger value="family">Family</TabsTrigger>
-                                <TabsTrigger value="qna">Q&A</TabsTrigger>
+                                <TabsTrigger value="qna">Q&amp;A</TabsTrigger>
                             </TabsList>
                             <TabsContent value="posts" className="space-y-6">
                                 {userPosts.length > 0 ? (
