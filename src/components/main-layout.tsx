@@ -89,7 +89,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     // Assuming the QR code contains a URL to the profile
     setIsScannerOpen(false);
     // basic validation
-    if (result.startsWith('http') || result.startsWith('/')) {
+    if (result.startsWith(window.location.origin) && result.includes('/profile/')) {
         router.push(result);
         toast({
             title: 'QR Code Scanned!',
@@ -99,7 +99,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         toast({
             variant: 'destructive',
             title: 'Invalid QR Code',
-            description: 'The scanned QR code does not contain a valid URL.',
+            description: 'The scanned QR code does not contain a valid profile URL for this app.',
         });
     }
   };

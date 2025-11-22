@@ -11,7 +11,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { CameraOff } from 'lucide-react';
 
 interface QrScannerDialogProps {
@@ -70,7 +69,7 @@ export function QrScannerDialog({
             setStream(null);
         }
     }
-  }, [open]);
+  }, [open, toast]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -92,6 +91,7 @@ export function QrScannerDialog({
                 if (code) {
                     onScan(code.data);
                     onOpenChange(false);
+                    return; // Stop scanning once a code is found
                 }
             }
         }

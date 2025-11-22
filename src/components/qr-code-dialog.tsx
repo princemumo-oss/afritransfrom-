@@ -11,6 +11,7 @@ import {
 import { type User } from '@/lib/data';
 import QRCode from "react-qr-code";
 import { useEffect, useState } from 'react';
+import { Skeleton } from './ui/skeleton';
 
 
 interface QrCodeDialogProps {
@@ -34,10 +35,6 @@ export function QrCodeDialog({
     }
   }, [user.id]);
   
-  if (!profileUrl) {
-    return null; // Or a loading spinner
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -48,7 +45,11 @@ export function QrCodeDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="bg-white p-4 rounded-lg flex items-center justify-center">
-            <QRCode value={profileUrl} size={256} />
+            {profileUrl ? (
+                <QRCode value={profileUrl} size={256} />
+            ) : (
+                <Skeleton className="w-[256px] h-[256px]" />
+            )}
         </div>
         <p className='text-center text-muted-foreground text-sm'>
             Scan this with the app camera to visit {user.name}'s profile.
