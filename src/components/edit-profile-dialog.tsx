@@ -80,6 +80,7 @@ export function EditProfileDialog({
       ...user,
       hobbies: user.hobbies?.join(', '),
       relationshipStatus: user.relationshipStatus || '',
+      family: user.family || [],
     },
   });
 

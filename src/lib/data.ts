@@ -170,6 +170,7 @@ export const users: User[] = [
     website: 'https://my-website.com',
     relationshipStatus: 'Single',
     hobbies: ['Next.js', 'React', 'Tailwind CSS'],
+    family: [{relation: "Mother", name:"Sarah"}]
   },
 ];
 

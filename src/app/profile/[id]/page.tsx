@@ -239,7 +239,9 @@ export default function ProfilePage() {
                             </TabsList>
                             <TabsContent value="posts" className="space-y-6">
                                 {userPosts.length > 0 ? (
-                                    userPosts.map(post => <PostCard key={post.id} post={post} />)
+                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                        {userPosts.map(post => <PostCard key={post.id} post={post} />)}
+                                    </div>
                                 ) : (
                                     <Card>
                                         <CardContent className="p-6 text-center text-muted-foreground">
