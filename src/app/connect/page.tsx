@@ -5,12 +5,15 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { PhoneOff, SkipForward, VideoOff } from 'lucide-react';
+import { PhoneOff, SkipForward, VideoOff, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
 import type { User } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { ChatBubbleManager } from '@/components/chat-bubble-manager';
+import { Input } from '@/components/ui/input';
+import { useChatBubbles } from '@/hooks/use-chat-bubbles';
 
 
 export default function ConnectPage() {
@@ -18,10 +21,13 @@ export default function ConnectPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectedUser, setConnectedUser] = useState<User | null>(null);
   const [callActive, setCallActive] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { addBubble } = useChatBubbles();
+  const currentUser = users.find(u => u.name === 'You');
 
   useEffect(() => {
     // Clean up streams on component unmount
@@ -81,9 +87,35 @@ export default function ConnectPage() {
       // In a real app, you would also stop the remote stream
   }
 
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim() || !currentUser) return;
+    
+    // In a real app, this would send the message over a WebSocket or WebRTC data channel.
+    // For this simulation, we'll just add it to the local user's screen.
+    // To make it look like the other person is replying, we can alternate who the bubble is from.
+    addBubble({
+        user: currentUser,
+        text: chatMessage
+    });
+    
+    // Simulate a reply from the connected user
+    if(connectedUser) {
+        setTimeout(() => {
+            addBubble({
+                user: connectedUser,
+                text: "I'm just a simulation, but that's cool!"
+            })
+        }, 1500);
+    }
+    
+    setChatMessage('');
+  }
+
   return (
     <MainLayout>
-      <div className="mx-auto grid w-full max-w-4xl gap-6">
+      <div className="relative mx-auto grid w-full max-w-4xl gap-6">
+        <ChatBubbleManager />
         <div className="text-center">
           <h1 className="text-3xl font-bold">Connect</h1>
           <p className="text-muted-foreground">Talk to random people from across the platform.</p>
@@ -141,8 +173,9 @@ export default function ConnectPage() {
                     </AlertDescription>
                 </Alert>
              )}
-            <div className="mt-4 flex justify-center gap-4">
-              {!callActive && !isConnecting ? (
+            <div className="mt-4 flex flex-col items-center gap-4">
+              <div className="flex justify-center gap-4">
+                 {!callActive && !isConnecting ? (
                  <Button size="lg" onClick={getCameraPermission} disabled={isConnecting}>
                     {isConnecting ? 'Connecting...' : 'Start Connecting'}
                 </Button>
@@ -158,6 +191,20 @@ export default function ConnectPage() {
                     </Button>
                 </>
               )}
+              </div>
+
+               {callActive && (
+                  <form onSubmit={handleSendMessage} className="w-full max-w-lg flex gap-2">
+                    <Input 
+                        placeholder="Say something..."
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                    />
+                    <Button type="submit" size="icon">
+                        <Send className="h-5 w-5" />
+                    </Button>
+                  </form>
+               )}
             </div>
           </CardContent>
         </Card>

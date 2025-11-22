@@ -26,7 +26,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ChatBubbleManager } from '@/components/chat-bubble-manager';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -208,7 +207,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1 p-4 sm:p-6">{children}</div>
         </SidebarInset>
       </div>
-      <ChatBubbleManager />
     </div>
   );
 }
