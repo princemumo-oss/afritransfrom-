@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -161,7 +162,7 @@ export default function SubmitInitiativePage() {
                   name="websiteUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Official Website</FormLabel>
+                      <FormLabel>Website</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} disabled={isSubmitting} />
                       </FormControl>
