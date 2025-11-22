@@ -254,6 +254,43 @@
           "description": "The WebRTC answer from the callee."
         }
       }
+    },
+    "Story": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Story",
+      "type": "object",
+      "description": "Represents an ephemeral story (or reel) created by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the story."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who created the story."
+        },
+        "mediaUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the video or image for the story."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"],
+          "description": "The type of media in the story."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the story was created."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating when the story will expire (e.g., 24 hours after creation)."
+        }
+      },
+      "required": ["id", "authorId", "mediaUrl", "mediaType", "createdAt", "expiresAt"]
     }
   },
   "auth": {
@@ -386,10 +423,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/stories/{storyId}",
+        "definition": {
+          "entityName": "Story",
+          "schema": {
+            "$ref": "#/backend/entities/Story"
+          },
+          "description": "Stores ephemeral stories from users. A TTL policy on the 'expiresAt' field will automatically delete stories after 24 hours.",
+          "params": [
+            {
+              "name": "storyId",
+              "description": "The unique identifier for the story."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. A `calls` collection is added to handle WebRTC signaling for video and voice calls. \n\nAuthorization Independence (CRITICAL): Achieved through denormalization. For instance, the `global_posts` collection duplicates the data from the user-specific `posts` subcollection, including `authorId`, allowing for feed generation without needing to `get()` user-specific data. The `chats` subcollection under each user includes denormalized member data (`members` map), eliminating the need to fetch user profiles for authorization.\n\nQAPs (Rules are not Filters): Structural Segregation ensures that each collection has a homogeneous security posture. For example, user profiles are kept separate from posts, and direct messages are partitioned by user and chat ID, ensuring clean and efficient security rules. For `list` operations for displaying feeds (posts), the design uses a dedicated `global_posts` collection that denormalizes necessary authorization data."
   }
 }
-
-    

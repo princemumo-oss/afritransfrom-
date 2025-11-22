@@ -93,6 +93,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
     { href: '/explore', icon: Compass, label: 'Explore', tooltip: 'Explore' },
+    { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels' },
     { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect' },
     { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
     { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot' },

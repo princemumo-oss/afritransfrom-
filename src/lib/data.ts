@@ -106,5 +106,39 @@ export type Notification = {
   read: boolean;
 };
 
+export type Reel = {
+  id: string;
+  author: User;
+  videoUrl: string;
+  caption: string;
+  likes: number;
+  comments: number;
+};
 
-    
+
+export const sampleReels: Reel[] = [
+  {
+    id: '1',
+    author: { id: '1', firstName: 'Video', lastName: 'Creator', handle: 'videocreator', avatarUrl: 'https://i.pravatar.cc/150?u=videocreator' } as User,
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-pressmaster-3141208-3840x2160-25fps.mp4',
+    caption: 'This is a cool video!',
+    likes: 123,
+    comments: 45,
+  },
+    {
+    id: '2',
+    author: { id: '2', firstName: 'Another', lastName: 'Creator', handle: 'anothercreator', avatarUrl: 'https://i.pravatar.cc/150?u=anothercreator' } as User,
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-kelly-2947239-3840x2160-25fps.mp4',
+    caption: 'Look at this amazing sunset!',
+    likes: 456,
+    comments: 78,
+  },
+    {
+    id: '3',
+    author: { id: '3', firstName: 'Nature', lastName: 'Lover', handle: 'naturelover', avatarUrl: 'https://i.pravatar.cc/150?u=naturelover' } as User,
+    videoUrl: 'https://storage.googleapis.com/static.afritransform.com/pexels-thirdman-5326840-3840x2160-25fps.mp4',
+    caption: 'So peaceful out here.',
+    likes: 789,
+    comments: 101,
+  },
+];
