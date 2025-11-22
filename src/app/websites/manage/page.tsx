@@ -1,33 +1,304 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { MainLayout } from '@/components/main-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { HardHat } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, HardHat, PlusCircle, Trash2, Upload, Image as ImageIcon, Video } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
+import type { Initiative, InitiativeEvent, Product } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
+
+const eventSchema = z.object({
+    title: z.string().min(1, "Title is required."),
+    description: z.string().min(1, "Description is required."),
+    url: z.string().url("A valid media URL is required."),
+    type: z.enum(['image', 'video']),
+});
+
+const productSchema = z.object({
+    name: z.string().min(1, "Product name is required."),
+    description: z.string().min(1, "Description is required."),
+    price: z.string().min(1, "Price is required."),
+    imageUrl: z.string().url("A valid image URL is required."),
+    purchaseUrl: z.string().url("A valid purchase link is required."),
+});
 
 export default function ManageWebsitesPage() {
-  return (
-    <MainLayout>
-      <div className="mx-auto grid w-full max-w-4xl gap-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Manage Your Websites</h1>
-          <p className="text-muted-foreground">
-            Here you can post updates, add events, and manage your approved websites.
-          </p>
-        </div>
+    const { user: authUser } = useUser();
+    const firestore = useFirestore();
+    const { toast } = useToast();
 
-        <Card className="flex flex-col items-center justify-center p-12 text-center">
-            <HardHat className="h-16 w-16 text-muted-foreground mb-4" />
-            <CardHeader>
-                <CardTitle>Under Construction</CardTitle>
-            </CardHeader>
+    const [selectedWebsiteId, setSelectedWebsiteId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const userWebsitesQuery = useMemoFirebase(() =>
+        authUser ? query(collection(firestore, 'initiatives'), where('submittedBy', '==', authUser.uid), where('status', '==', 'approved')) : null
+    , [firestore, authUser]);
+
+    const { data: userWebsites, isLoading } = useCollection<Initiative>(userWebsitesQuery);
+
+    const selectedWebsite = userWebsites?.find(w => w.id === selectedWebsiteId);
+    
+    // Set initial selected website
+    useEffect(() => {
+        if (userWebsites && userWebsites.length > 0 && !selectedWebsiteId) {
+            setSelectedWebsiteId(userWebsites[0].id);
+        }
+    }, [userWebsites, selectedWebsiteId]);
+
+    const handleFileUpload = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+             if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                reject('File is too large. Max 5MB.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // In a real app, this would be an upload to Firebase Storage.
+                // Using a data URL is not scalable for production.
+                resolve(reader.result as string);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleUpdate = async (field: string, data: any) => {
+        if (!selectedWebsiteId) return;
+        setIsSubmitting(true);
+        try {
+            const websiteRef = doc(firestore, 'initiatives', selectedWebsiteId);
+            await updateDocumentNonBlocking(websiteRef, { [field]: data });
+            toast({ title: 'Success!', description: `Website ${field} has been updated.` });
+        } catch (error) {
+            console.error(`Error updating ${field}:`, error);
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to update ${field}.` });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    const handleArrayUpdate = async (field: 'events.upcoming' | 'products', data: any, type: 'past' | 'upcoming' = 'upcoming') => {
+        if (!selectedWebsiteId) return;
+        setIsSubmitting(true);
+        
+        // This is a simplified way to add to nested objects.
+        // For production, you might want more robust logic, especially for 'events'.
+        const updateData = field === 'events.upcoming' 
+            ? { [`events.${type}`]: arrayUnion(data) }
+            : { [field]: arrayUnion(data) };
+
+        try {
+            const websiteRef = doc(firestore, 'initiatives', selectedWebsiteId);
+            await updateDocumentNonBlocking(websiteRef, updateData);
+            toast({ title: 'Success!', description: `${field.split('.')[0]} has been added.` });
+        } catch (error) {
+            console.error(`Error adding to ${field}:`, error);
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to add item.` });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    if (isLoading) {
+        return <MainLayout><div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div></MainLayout>
+    }
+    
+    if (!userWebsites || userWebsites.length === 0) {
+        return (
+             <MainLayout>
+                <div className="mx-auto grid w-full max-w-4xl gap-6">
+                     <Card className="flex flex-col items-center justify-center p-12 text-center">
+                        <HardHat className="h-16 w-16 text-muted-foreground mb-4" />
+                        <CardHeader>
+                            <CardTitle>No Approved Websites</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <CardDescription>
+                            You do not have any approved websites to manage. Once your submission is approved, it will appear here.
+                            </CardDescription>
+                        </CardContent>
+                    </Card>
+                </div>
+            </MainLayout>
+        )
+    }
+
+    return (
+        <MainLayout>
+            <div className="mx-auto grid w-full max-w-4xl gap-6">
+                <div className="space-y-2">
+                    <h1 className="text-3xl font-bold">Manage Your Websites</h1>
+                    <p className="text-muted-foreground">Update your website's content, events, and products.</p>
+                </div>
+                
+                {userWebsites.length > 1 && (
+                    <Select onValueChange={setSelectedWebsiteId} value={selectedWebsiteId || ''}>
+                        <SelectTrigger className="w-full md:w-[300px]">
+                            <SelectValue placeholder="Select a website to manage..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {userWebsites.map(site => (
+                                <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+
+                {selectedWebsite && (
+                    <div className="space-y-6">
+                        {/* Edit Description */}
+                        <EditDescriptionCard website={selectedWebsite} onUpdate={handleUpdate} isSubmitting={isSubmitting} />
+                        {/* Add Event */}
+                        <AddEventCard onAdd={(data) => handleArrayUpdate('events.upcoming', data, 'upcoming')} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
+                        {/* Add Product */}
+                        <AddProductCard onAdd={(data) => handleArrayUpdate('products', data)} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
+                    </div>
+                )}
+            </div>
+        </MainLayout>
+    );
+}
+
+// Sub-component for editing the description
+function EditDescriptionCard({ website, onUpdate, isSubmitting }: { website: Initiative; onUpdate: (field: string, data: any) => void; isSubmitting: boolean }) {
+    const [description, setDescription] = useState(website.description);
+    return (
+        <Card>
+            <CardHeader><CardTitle>Edit Website Description</CardTitle></CardHeader>
             <CardContent>
-                <CardDescription>
-                This management page is currently being built. Soon you'll be able to manage all your website content from here.
-                </CardDescription>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-32" />
+            </CardContent>
+            <CardFooter>
+                <Button onClick={() => onUpdate('description', description)} disabled={isSubmitting || description === website.description}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Save Description
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
+// Sub-component for adding an event
+function AddEventCard({ onAdd, isSubmitting, handleFileUpload }: { onAdd: (data: any) => void; isSubmitting: boolean; handleFileUpload: (file: File) => Promise<string> }) {
+    const eventForm = useForm({ resolver: zodResolver(eventSchema) });
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const onEventSubmit = async (data: z.infer<typeof eventSchema>) => {
+        onAdd(data);
+        eventForm.reset({ title: '', description: '', url: '', type: 'image' });
+    };
+
+    const handleFileTrigger = () => fileInputRef.current?.click();
+
+    const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : null;
+        if (!fileType) {
+            eventForm.setError('url', { type: 'manual', message: 'Invalid file type.' });
+            return;
+        }
+
+        try {
+            const dataUrl = await handleFileUpload(file);
+            eventForm.setValue('url', dataUrl);
+            eventForm.setValue('type', fileType);
+            eventForm.clearErrors('url');
+        } catch (error) {
+             eventForm.setError('url', { type: 'manual', message: typeof error === 'string' ? error : 'Upload failed' });
+        }
+    };
+    
+    return (
+        <Card>
+            <CardHeader><CardTitle>Add a New Event (Upcoming)</CardTitle></CardHeader>
+            <CardContent>
+                <Form {...eventForm}>
+                    <form onSubmit={eventForm.handleSubmit(onEventSubmit)} className="space-y-4">
+                        <FormField control={eventForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Event Title</FormLabel><FormControl><Input placeholder="e.g., Annual Conference 2024" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={eventForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Event Description</FormLabel><FormControl><Textarea placeholder="Details about the event..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={eventForm.control} name="url" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Event Media (Photo or Video)</FormLabel>
+                                <FormControl>
+                                    <Button type="button" variant="outline" onClick={handleFileTrigger}><Upload className="mr-2 h-4 w-4"/> Upload Media</Button>
+                                </FormControl>
+                                <input type="file" ref={fileInputRef} onChange={onFileChange} accept="image/*,video/*" className="hidden" />
+                                {field.value && <Image src={field.value} alt="preview" width={80} height={80} className="rounded-md object-cover mt-2" />}
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Event</Button>
+                    </form>
+                </Form>
             </CardContent>
         </Card>
-      </div>
-    </MainLayout>
-  );
+    );
 }
+
+// Sub-component for adding a product
+function AddProductCard({ onAdd, isSubmitting, handleFileUpload }: { onAdd: (data: any) => void; isSubmitting: boolean; handleFileUpload: (file: File) => Promise<string> }) {
+    const productForm = useForm({ resolver: zodResolver(productSchema) });
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const onProductSubmit = (data: z.infer<typeof productSchema>) => {
+        // We're missing `id` here, Firestore will generate it.
+        onAdd(data);
+        productForm.reset({ name: '', description: '', price: '', imageUrl: '', purchaseUrl: '' });
+    };
+
+    const handleFileTrigger = () => fileInputRef.current?.click();
+    
+    const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const dataUrl = await handleFileUpload(file);
+            productForm.setValue('imageUrl', dataUrl);
+            productForm.clearErrors('imageUrl');
+        } catch (error) {
+             productForm.setError('imageUrl', { type: 'manual', message: typeof error === 'string' ? error : 'Upload failed' });
+        }
+    };
+    
+    return (
+        <Card>
+            <CardHeader><CardTitle>Add a New Product</CardTitle></CardHeader>
+            <CardContent>
+                <Form {...productForm}>
+                    <form onSubmit={productForm.handleSubmit(onProductSubmit)} className="space-y-4">
+                        <FormField control={productForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Branded T-Shirt" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={productForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Product Description</FormLabel><FormControl><Textarea placeholder="Details about the product..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={productForm.control} name="price" render={({ field }) => (<FormItem><FormLabel>Price</FormLabel><FormControl><Input placeholder="e.g., $19.99" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={productForm.control} name="purchaseUrl" render={({ field }) => (<FormItem><FormLabel>Purchase Link</FormLabel><FormControl><Input placeholder="https://your-store.com/product" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={productForm.control} name="imageUrl" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Product Image</FormLabel>
+                                <FormControl>
+                                    <Button type="button" variant="outline" onClick={handleFileTrigger}><Upload className="mr-2 h-4 w-4"/> Upload Image</Button>
+                                </FormControl>
+                                <input type="file" ref={fileInputRef} onChange={onFileChange} accept="image/*" className="hidden" />
+                                {field.value && <Image src={field.value} alt="preview" width={80} height={80} className="rounded-md object-cover mt-2" />}
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Product</Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
+}
+    
