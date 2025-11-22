@@ -162,9 +162,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               </PopoverContent>
             </Popover>
 
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Settings</span>
+            <Button asChild variant="ghost" size="icon" className="rounded-full">
+              <Link href="/settings">
+                <Settings className="h-5 w-5" />
+                <span className="sr-only">Settings</span>
+              </Link>
             </Button>
           </div>
         </header>
