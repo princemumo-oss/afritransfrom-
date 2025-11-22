@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -25,7 +25,6 @@ import type { Notification } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { QrScannerDialog } from './qr-scanner-dialog';
 
@@ -63,10 +62,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   const navItems = [
-    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed', color: 'text-sky-500' },
-    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages', color: 'text-purple-500' },
-    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-emerald-500' },
-    { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect', color: 'text-yellow-500' },
+    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
+    { href: '/explore', icon: Compass, label: 'Explore', tooltip: 'Explore' },
+    { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels' },
+    { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect' },
+    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
+    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
+    { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools' },
   ];
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -108,8 +110,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         collapsible="icon"
         className="hidden border-r bg-card dark:bg-zinc-900/50 md:flex"
       >
-        <SidebarHeader className="border-b">
-          <Link href="/" className="flex items-center gap-2 p-2 text-lg font-bold">
+        <SidebarHeader className="border-b justify-center">
+          <Link href="/" className="flex items-center justify-center p-2 text-lg font-bold">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -118,12 +120,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-6 w-6 text-primary"
+              className="h-8 w-8 text-primary"
             >
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72" />
             </svg>
-            <span className="group-data-[collapsible=icon]:hidden">afritransform</span>
+            <span className="sr-only group-data-[collapsible=icon]:hidden">afritransform</span>
           </Link>
         </SidebarHeader>
         <SidebarContent className="flex-1 p-2">
@@ -132,7 +134,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild tooltip={item.tooltip} isActive={pathname === item.href}>
                   <Link href={item.href}>
-                    <item.icon className={cn(item.color)} />
+                    <item.icon />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -142,6 +144,22 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="border-t p-2">
            <SidebarMenu>
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Scan QR Code" onClick={() => setIsScannerOpen(true)}>
+                  <div>
+                    <QrCode />
+                    <span>Scan QR</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Notifications">
+                    <div>
+                        <Bell/>
+                        <span>Notifications</span>
+                    </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile" isActive={pathname.startsWith('/profile')}>
                     <Link href="/profile/me">
@@ -159,16 +177,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6">
           <SidebarTrigger className="md:hidden" />
-          <div className="relative flex-1">
+           <Link href="/" className="text-lg font-bold md:hidden">afritransform</Link>
+          <div className="relative ml-auto flex-1 md:grow-0">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search everything..."
-              className="w-full rounded-lg bg-card pl-8 md:w-[280px] lg:w-[320px]"
+              placeholder="Search..."
+              className="w-full rounded-lg bg-muted pl-8 md:w-[280px] lg:w-[320px]"
               onKeyDown={handleSearch}
             />
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsScannerOpen(true)}>
                 <QrCode className="h-5 w-5" />
                 <span className="sr-only">Scan QR Code</span>
@@ -182,7 +201,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
-                  <Bell className="h-5 w-5 text-yellow-500" />
+                  <Bell className="h-5 w-5" />
                   {unreadNotifications > 0 && (
                     <span className="absolute right-0 top-0 flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
@@ -197,7 +216,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   <CardHeader className='p-4'>
                     <CardTitle>Notifications</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 max-h-96 overflow-y-auto">
                     <div className="flex flex-col">
                       {notifications.map((notification) => (
                         <div key={notification.id} className={cn("flex items-start gap-3 p-4", !notification.read && "bg-accent/50")}>
@@ -229,7 +248,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
             <Button asChild variant="ghost" size="icon" className="rounded-full">
               <Link href="/settings">
-                <Settings className="h-5 w-5 text-gray-500" />
+                <Settings className="h-5 w-5" />
                 <span className="sr-only">Settings</span>
               </Link>
             </Button>

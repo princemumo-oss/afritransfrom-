@@ -201,21 +201,21 @@ export default function ConnectPage() {
                 </Button>
               ) : (
                 <>
-                    <Button size="lg" variant="outline" onClick={toggleMic}>
-                        {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                    <Button size="lg" variant="outline" onClick={toggleMic} className="rounded-full w-14 h-14">
+                        {isMicMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                         <span className="sr-only">{isMicMuted ? 'Unmute Mic' : 'Mute Mic'}</span>
                     </Button>
-                     <Button size="lg" variant="outline" onClick={toggleVideo}>
-                        {isVideoMuted ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                     <Button size="lg" variant="outline" onClick={toggleVideo} className="rounded-full w-14 h-14">
+                        {isVideoMuted ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
                         <span className="sr-only">{isVideoMuted ? 'Turn on Camera' : 'Turn off Camera'}</span>
                     </Button>
-                    <Button size="lg" variant="outline" onClick={startConnection} disabled={isConnecting}>
-                        <SkipForward className="mr-2 h-5 w-5" />
-                        Next
+                    <Button size="lg" variant="secondary" onClick={startConnection} disabled={isConnecting} className="rounded-full w-14 h-14">
+                        <SkipForward className="h-6 w-6" />
+                        <span className="sr-only">Next</span>
                     </Button>
-                    <Button size="lg" variant="destructive" onClick={endCall}>
-                        <PhoneOff className="mr-2 h-5 w-5" />
-                        End Call
+                    <Button size="lg" variant="destructive" onClick={endCall} className="rounded-full w-14 h-14">
+                        <PhoneOff className="h-6 w-6" />
+                        <span className="sr-only">End Call</span>
                     </Button>
                 </>
               )}
@@ -227,8 +227,9 @@ export default function ConnectPage() {
                         placeholder="Say something..."
                         value={chatMessage}
                         onChange={(e) => setChatMessage(e.target.value)}
+                        className="rounded-full"
                     />
-                    <Button type="submit" size="icon">
+                    <Button type="submit" size="icon" className="rounded-full">
                         <Send className="h-5 w-5" />
                     </Button>
                   </form>
