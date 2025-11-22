@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Send, Loader2, Bot, User as UserIcon } from 'lucide-react';
+import { Send, Loader2, Bot, User as UserIcon, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +85,14 @@ export default function ChatbotPage() {
         }
       };
 
+      const handleCopyMessage = (content: string) => {
+        navigator.clipboard.writeText(content);
+        toast({
+            title: 'Message Copied!',
+            description: 'The message has been copied to your clipboard.',
+        });
+      }
+
     return (
         <MainLayout>
              <div className="mx-auto grid w-full max-w-3xl gap-6">
@@ -119,6 +128,16 @@ export default function ChatbotPage() {
                                             <div className={cn('max-w-md rounded-lg p-3 lg:max-w-lg', message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
                                                 <p className="whitespace-pre-wrap">{message.content}</p>
                                             </div>
+                                             {message.role === 'model' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                                                    onClick={() => handleCopyMessage(message.content)}
+                                                >
+                                                    <Copy className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                             {message.role === 'user' && currentUser && (
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={currentUser.avatarUrl} alt={currentUser.firstName} />

@@ -5,11 +5,10 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Bot, Image, Languages, PenLine, Loader2 } from 'lucide-react';
+import { ArrowRight, Bot, Image, Languages, PenLine, Loader2, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { generateStory } from '@/ai/flows/story-generator';
 import { useToast } from '@/hooks/use-toast';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 
 const aiTools = [
@@ -67,6 +66,15 @@ function StoryGenerator() {
         setIsLoading(false);
       }
     };
+
+    const handleCopyStory = () => {
+        if (!story) return;
+        navigator.clipboard.writeText(story);
+        toast({
+            title: 'Story Copied!',
+            description: 'The story has been copied to your clipboard.',
+        });
+    }
   
     return (
       <Card className="col-span-1 flex flex-col md:col-span-2 lg:col-span-3">
@@ -92,10 +100,18 @@ function StoryGenerator() {
             </Button>
           </div>
           {story && (
-             <Card className='bg-muted/50'>
+             <Card className='bg-muted/50 relative'>
                 <CardContent className='p-4'>
                     <p className='text-sm whitespace-pre-wrap'>{story}</p>
                 </CardContent>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 right-2 h-7 w-7 text-muted-foreground"
+                    onClick={handleCopyStory}
+                >
+                    <Copy className="h-4 w-4" />
+                </Button>
              </Card>
           )}
         </CardContent>
