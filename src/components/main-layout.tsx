@@ -139,6 +139,40 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const NotificationsContent = () => (
+    <Card className="border-0 shadow-none">
+        <CardHeader className='p-4'>
+        <CardTitle>Notifications</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 max-h-96 overflow-y-auto">
+        <div className="flex flex-col">
+            {notifications.map((notification) => (
+            <div key={notification.id} className={cn("flex items-start gap-3 p-4", !notification.read && "bg-accent/50")}>
+                <div className='flex h-8 w-8 items-center justify-center rounded-full bg-background'>
+                    {getNotificationIcon(notification.type)}
+                </div>
+                <div className="text-sm">
+                    <p>
+                        <span className="font-semibold">{notification.user.firstName}</span>
+                        {notification.type === 'like' && ' liked your post.'}
+                        {notification.type === 'comment' && ' commented on your post.'}
+                        {notification.type === 'friend_request' && ' sent you a friend request.'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{notification.timestamp}</p>
+                </div>
+            </div>
+            ))}
+            {notifications.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No new notifications.</p>}
+        </div>
+        </CardContent>
+        <CardFooter className="p-2 border-t">
+            <Button variant="link" size="sm" className="w-full" onClick={markAllAsRead} disabled={unreadNotifications === 0}>
+            Mark all as read
+            </Button>
+        </CardFooter>
+    </Card>
+  )
+
   return (
     <div className="flex min-h-screen w-full">
       <Sidebar
@@ -188,14 +222,27 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Notifications">
-                    <div>
-                        <Bell/>
-                        <span>Notifications</span>
-                    </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Popover>
+                <PopoverTrigger asChild>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Notifications">
+                            <div className='relative'>
+                                <Bell/>
+                                <span>Notifications</span>
+                                {unreadNotifications > 0 && (
+                                    <span className="absolute right-0 top-0 flex h-2 w-2">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                                    </span>
+                                )}
+                            </div>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                    <NotificationsContent />
+                </PopoverContent>
+             </Popover>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile" isActive={pathname.startsWith('/profile')}>
                     <Link href="/profile/me">
@@ -254,37 +301,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="end">
-                <Card className="border-0 shadow-none">
-                  <CardHeader className='p-4'>
-                    <CardTitle>Notifications</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-96 overflow-y-auto">
-                    <div className="flex flex-col">
-                      {notifications.map((notification) => (
-                        <div key={notification.id} className={cn("flex items-start gap-3 p-4", !notification.read && "bg-accent/50")}>
-                          <div className='flex h-8 w-8 items-center justify-center rounded-full bg-background'>
-                             {getNotificationIcon(notification.type)}
-                          </div>
-                          <div className="text-sm">
-                              <p>
-                                  <span className="font-semibold">{notification.user.firstName}</span>
-                                  {notification.type === 'like' && ' liked your post.'}
-                                  {notification.type === 'comment' && ' commented on your post.'}
-                                  {notification.type === 'friend_request' && ' sent you a friend request.'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{notification.timestamp}</p>
-                          </div>
-                        </div>
-                      ))}
-                      {notifications.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No new notifications.</p>}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-2 border-t">
-                      <Button variant="link" size="sm" className="w-full" onClick={markAllAsRead} disabled={unreadNotifications === 0}>
-                        Mark all as read
-                      </Button>
-                  </CardFooter>
-                </Card>
+                <NotificationsContent />
               </PopoverContent>
             </Popover>
 
