@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { PhoneOff, SkipForward, VideoOff, Send } from 'lucide-react';
+import { PhoneOff, SkipForward, Video, VideoOff, Send, Mic, MicOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
 import type { User } from '@/lib/data';
@@ -23,6 +23,9 @@ export default function ConnectPage() {
   const [connectedUser, setConnectedUser] = useState<User | null>(null);
   const [callActive, setCallActive] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -88,6 +91,22 @@ export default function ConnectPage() {
       // In a real app, you would also stop the remote stream
   }
 
+  const toggleMic = () => {
+      if (localVideoRef.current?.srcObject) {
+          const stream = localVideoRef.current.srcObject as MediaStream;
+          stream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+          setIsMicMuted(!isMicMuted);
+      }
+  }
+  
+  const toggleVideo = () => {
+      if (localVideoRef.current?.srcObject) {
+          const stream = localVideoRef.current.srcObject as MediaStream;
+          stream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+          setIsVideoMuted(!isVideoMuted);
+      }
+  }
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || !currentUser) return;
@@ -126,8 +145,8 @@ export default function ConnectPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-                <video ref={localVideoRef} className={cn("h-full w-full object-cover", !hasCameraPermission && 'hidden')} autoPlay muted />
-                {!hasCameraPermission && (
+                <video ref={localVideoRef} className={cn("h-full w-full object-cover", (!hasCameraPermission || isVideoMuted) && 'hidden')} autoPlay muted />
+                {(!hasCameraPermission || isVideoMuted) && (
                   <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center">
                     <VideoOff className="h-12 w-12 text-muted-foreground" />
                     <p className="mt-2 text-muted-foreground">Your camera is off</p>
@@ -182,6 +201,14 @@ export default function ConnectPage() {
                 </Button>
               ) : (
                 <>
+                    <Button size="lg" variant="outline" onClick={toggleMic}>
+                        {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                        <span className="sr-only">{isMicMuted ? 'Unmute Mic' : 'Mute Mic'}</span>
+                    </Button>
+                     <Button size="lg" variant="outline" onClick={toggleVideo}>
+                        {isVideoMuted ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                        <span className="sr-only">{isVideoMuted ? 'Turn on Camera' : 'Turn off Camera'}</span>
+                    </Button>
                     <Button size="lg" variant="outline" onClick={startConnection} disabled={isConnecting}>
                         <SkipForward className="mr-2 h-5 w-5" />
                         Next
