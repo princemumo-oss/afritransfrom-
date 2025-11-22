@@ -11,6 +11,14 @@ export type Badge = {
   icon: string;
 };
 
+export type Question = {
+  id: string;
+  questioner: User;
+  questionText: string;
+  answerText?: string;
+  timestamp: string;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -42,6 +50,7 @@ export type User = {
     relation: string;
     name: string;
   }[];
+  questions?: Question[];
 };
 
 export type Post = {
@@ -107,7 +116,11 @@ export const users: User[] = [
     website: 'https://alice.dev',
     relationshipStatus: 'In a relationship',
     hobbies: ['Coding', 'Reading', 'Cats'],
-    family: [{ relation: 'Brother', name: 'Alex' }]
+    family: [{ relation: 'Brother', name: 'Alex' }],
+    questions: [
+      { id: 'q1', questioner: users[2], questionText: "What's your favorite programming language and why?", answerText: "Tough question! I love TypeScript for its safety and tooling, but Python will always have a special place in my heart for its simplicity.", timestamp: '3d ago'},
+      { id: 'q2', questioner: users[1], questionText: "Any tips for getting into software engineering?", timestamp: '5d ago'},
+    ]
   },
   { 
     id: '2', 
@@ -170,7 +183,10 @@ export const users: User[] = [
     website: 'https://my-website.com',
     relationshipStatus: 'Single',
     hobbies: ['Next.js', 'React', 'Tailwind CSS'],
-    family: [{relation: "Mother", name:"Sarah"}]
+    family: [{relation: "Mother", name:"Sarah"}],
+    questions: [
+        { id: 'q3', questioner: users[0], questionText: "What are you working on right now?", timestamp: '1d ago'}
+    ]
   },
 ];
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, use, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/main-layout';
 import PostCard from '@/components/post-card';
@@ -9,14 +9,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { users as initialUsers, posts as allPosts, type User, type Badge as BadgeType, badges as allBadges } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award } from 'lucide-react';
+import { users as initialUsers, posts as allPosts, type User, type Badge as BadgeType, badges as allBadges, type Question } from '@/lib/data';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SetMoodDialog } from '@/components/set-mood-dialog';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { QnaSection } from '@/components/qna-section';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -43,7 +44,8 @@ export default function ProfilePage() {
     // This is a workaround for a Next.js bug with dynamic routes in App Router.
     const id = params.id;
 
-    const userId = id === 'me' ? users.find(u => u.name === 'You')?.id : id;
+    const currentUser = users.find(u => u.name === 'You');
+    const userId = id === 'me' ? currentUser?.id : id;
     const user = users.find(u => u.id === userId);
     const userPosts = allPosts.filter(p => p.author.id === userId);
     const userFriends = users.filter(u => u.id !== userId && u.id !== '5'); // Exclude current user and 'You'
@@ -56,6 +58,25 @@ export default function ProfilePage() {
         if(user) {
             handleProfileUpdate({ ...user, mood });
         }
+    }
+
+    const handleQuestionSubmit = (questionText: string) => {
+        if (!user || !currentUser) return;
+        const newQuestion: Question = {
+            id: `q${(user.questions?.length || 0) + 1}`,
+            questioner: currentUser,
+            questionText,
+            timestamp: 'Just now'
+        };
+        const updatedUser = { ...user, questions: [...(user.questions || []), newQuestion] };
+        handleProfileUpdate(updatedUser);
+    }
+    
+    const handleAnswerSubmit = (questionId: string, answerText: string) => {
+        if (!user) return;
+        const updatedQuestions = user.questions?.map(q => q.id === questionId ? {...q, answerText} : q);
+        const updatedUser = { ...user, questions: updatedQuestions };
+        handleProfileUpdate(updatedUser);
     }
 
     // Effect to clear expired moods
@@ -233,9 +254,10 @@ export default function ProfilePage() {
 
                     <div className="space-y-6 lg:col-span-2">
                         <Tabs defaultValue="posts" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
+                            <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="posts">Posts</TabsTrigger>
                                 <TabsTrigger value="family">Family</TabsTrigger>
+                                <TabsTrigger value="qna">Q&A</TabsTrigger>
                             </TabsList>
                             <TabsContent value="posts" className="space-y-6">
                                 {userPosts.length > 0 ? (
@@ -267,6 +289,14 @@ export default function ProfilePage() {
                                         </CardContent>
                                     </Card>
                                 )}
+                            </TabsContent>
+                            <TabsContent value="qna">
+                                <QnaSection 
+                                    user={user}
+                                    isCurrentUserProfile={isCurrentUserProfile}
+                                    onQuestionSubmit={handleQuestionSubmit}
+                                    onAnswerSubmit={handleAnswerSubmit}
+                                />
                             </TabsContent>
                         </Tabs>
                     </div>
