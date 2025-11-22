@@ -134,7 +134,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/50 p-4">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold text-primary">afritransform</h1>
+        <p className="text-muted-foreground">Connecting Africa, one story at a time.</p>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create an Account</CardTitle>
@@ -301,3 +305,4 @@ export default function SignupPage() {
   );
 
     
+
