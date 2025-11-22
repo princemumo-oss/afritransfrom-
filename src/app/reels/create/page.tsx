@@ -8,14 +8,17 @@ import * as z from 'zod';
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Video, Upload, Send, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Video, Upload, Send, Loader2, RefreshCw, Eye, Users, Hourglass, Music, Sparkles } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 const reelSchema = z.object({
   caption: z.string().max(2200, 'Caption is too long').optional(),
+  visibility: z.enum(['public', 'friends', 'ephemeral']).default('ephemeral'),
 });
 
 type ReelFormValues = z.infer<typeof reelSchema>;
@@ -40,6 +43,7 @@ function CreateReelPageContent() {
     resolver: zodResolver(reelSchema),
     defaultValues: {
       caption: '',
+      visibility: 'ephemeral',
     },
   });
 
@@ -120,8 +124,11 @@ function CreateReelPageContent() {
     try {
         // In a real app, upload blob to Firebase Storage and get a permanent URL.
         // For this demo, this will only work temporarily in the browser session.
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
+        let expiresAt: Date | null = null;
+        if (data.visibility === 'ephemeral') {
+            expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+        }
 
         const storyData = {
             authorId: user.uid,
@@ -130,6 +137,7 @@ function CreateReelPageContent() {
             caption: data.caption,
             createdAt: serverTimestamp(),
             expiresAt: expiresAt,
+            visibility: data.visibility,
         };
 
         await addDocumentNonBlocking(collection(firestore, 'stories'), storyData);
@@ -185,39 +193,83 @@ function CreateReelPageContent() {
         )}
 
         {step === 2 && media && (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Add Details</CardTitle>
-                    <CardDescription>Add a caption and post your reel.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="col-span-1">
-                             {media.type === 'image' ? (
-                                <img src={media.url} alt="Preview" className="rounded-lg object-cover aspect-[9/16]" />
-                            ) : (
-                                <video src={media.url} muted loop className="rounded-lg object-cover aspect-[9/16]" />
-                            )}
-                        </div>
-                        <form id="reel-form" onSubmit={form.handleSubmit(handlePublish)} className="col-span-2">
-                             <Textarea
-                                placeholder="Write a caption..."
-                                {...form.register('caption')}
-                                className="min-h-32"
-                            />
-                        </form>
-                    </div>
-                    <div className="flex justify-between">
-                         <Button variant="outline" onClick={resetFlow} disabled={isSubmitting}>
-                            <RefreshCw className="mr-2 h-4 w-4" /> Start Over
-                        </Button>
-                        <Button type="submit" form="reel-form" disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Post
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handlePublish)}>
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Add Details</CardTitle>
+                      <CardDescription>Add a caption and post your reel.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                          <div className="col-span-1">
+                              {media.type === 'image' ? (
+                                  <img src={media.url} alt="Preview" className="rounded-lg object-cover aspect-[9/16]" />
+                              ) : (
+                                  <video src={media.url} muted loop autoPlay className="rounded-lg object-cover aspect-[9/16]" />
+                              )}
+                          </div>
+                          <div className="col-span-2 space-y-4">
+                              <FormField
+                                  control={form.control}
+                                  name="caption"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Caption & Hashtags</FormLabel>
+                                          <FormControl>
+                                              <Textarea
+                                                  placeholder="Write a caption... #cool #awesome"
+                                                  {...field}
+                                                  className="min-h-32"
+                                              />
+                                          </FormControl>
+                                      </FormItem>
+                                  )}
+                              />
+                               <FormField
+                                  control={form.control}
+                                  name="visibility"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Visibility</FormLabel>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select visibility" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="ephemeral"><div className="flex items-center gap-2"><Hourglass className="h-4 w-4"/> Ephemeral (24h)</div></SelectItem>
+                                          <SelectItem value="public"><div className="flex items-center gap-2"><Eye className="h-4 w-4"/> Public</div></SelectItem>
+                                          <SelectItem value="friends"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Friends Only</div></SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </FormItem>
+                                  )}
+                                />
+                          </div>
+                      </div>
+                      <div className='space-y-4 pt-4'>
+                          <Button type="button" variant="outline" className="w-full" disabled>
+                              <Music className="mr-2 h-4 w-4" /> Add Music / Soundtrack (coming soon)
+                          </Button>
+                          <Button type="button" variant="outline" className="w-full" disabled>
+                              <Sparkles className="mr-2 h-4 w-4" /> Add Filters / Effects (coming soon)
+                          </Button>
+                      </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                       <Button variant="outline" onClick={resetFlow} disabled={isSubmitting}>
+                          <RefreshCw className="mr-2 h-4 w-4" /> Start Over
+                      </Button>
+                      <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                          Post
+                      </Button>
+                  </CardFooter>
+              </Card>
+            </form>
+          </Form>
         )}
       </div>
     </MainLayout>

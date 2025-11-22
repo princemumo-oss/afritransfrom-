@@ -265,7 +265,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Story",
       "type": "object",
-      "description": "Represents an ephemeral story (or reel) created by a user.",
+      "description": "Represents a story or reel created by a user.",
       "properties": {
         "id": {
           "type": "string",
@@ -285,18 +285,36 @@
           "enum": ["image", "video"],
           "description": "The type of media in the story."
         },
+        "caption": {
+          "type": "string",
+          "description": "The caption for the story/reel."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "friends", "ephemeral"],
+          "description": "The visibility setting for the story/reel."
+        },
+        "soundtrack": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "artist": { "type": "string" },
+            "url": { "type": "string", "format": "uri" }
+          },
+          "description": "Optional soundtrack information."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
           "description": "Timestamp indicating when the story was created."
         },
         "expiresAt": {
-          "type": "string",
+          "type": ["string", "null"],
           "format": "date-time",
-          "description": "Timestamp indicating when the story will expire (e.g., 24 hours after creation)."
+          "description": "Timestamp indicating when the story will expire (e.g., 24 hours after creation). Null if not ephemeral."
         }
       },
-      "required": ["id", "authorId", "mediaUrl", "mediaType", "createdAt", "expiresAt"]
+      "required": ["id", "authorId", "mediaUrl", "mediaType", "createdAt", "visibility"]
     },
     "Initiative": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -586,5 +604,3 @@
     "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. A `calls` collection is added to handle WebRTC signaling for video and voice calls. A new `initiatives` collection is added to handle user submissions, with a `status` field to manage an approval workflow."
   }
 }
-
-    
