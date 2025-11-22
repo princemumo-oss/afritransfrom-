@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, MessageCircle } from 'lucide-react';
+import { Shield, MessageCircle, Bell } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -28,6 +28,9 @@ export default function SettingsPage() {
         friendRequests: true,
         comments: true,
         likes: false,
+        doNotDisturb: false,
+        priorityCloseFriends: true,
+        priorityVerified: false,
     });
     const [privacy, setPrivacy] = useState({
         postVisibility: 'public',
@@ -129,7 +132,10 @@ export default function SettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Notifications</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <Bell />
+                            Notifications
+                        </CardTitle>
                         <CardDescription>Manage how you receive notifications.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -165,6 +171,40 @@ export default function SettingsPage() {
                                 checked={notifications.likes}
                                 onCheckedChange={(checked) => setNotifications(prev => ({...prev, likes: checked}))}
                             />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="do-not-disturb">Quiet Hours / Do Not Disturb</Label>
+                                <p className="text-sm text-muted-foreground">Temporarily pause all notifications.</p>
+                            </div>
+                            <Switch 
+                                id="do-not-disturb" 
+                                checked={notifications.doNotDisturb}
+                                onCheckedChange={(checked) => setNotifications(prev => ({...prev, doNotDisturb: checked}))}
+                            />
+                        </div>
+                        <div>
+                             <Label>Priority Notifications</Label>
+                             <p className="text-sm text-muted-foreground mb-4">Receive notifications from these groups even in Do Not Disturb mode.</p>
+                             <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm">From Close Friends</p>
+                                    <Switch 
+                                        id="priority-close-friends"
+                                        checked={notifications.priorityCloseFriends}
+                                        onCheckedChange={(checked) => setNotifications(prev => ({...prev, priorityCloseFriends: checked}))}
+                                    />
+                                </div>
+                                 <div className="flex items-center justify-between">
+                                    <p className="text-sm">From Verified Accounts</p>
+                                    <Switch 
+                                        id="priority-verified"
+                                        checked={notifications.priorityVerified}
+                                        onCheckedChange={(checked) => setNotifications(prev => ({...prev, priorityVerified: checked}))}
+                                    />
+                                </div>
+                             </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -347,5 +387,7 @@ export default function SettingsPage() {
             </div>
         </MainLayout>
     );
+
+    
 
     
