@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -64,7 +64,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
     { href: '/explore', icon: Compass, label: 'Explore', tooltip: 'Explore' },
-    { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels' },
     { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect' },
     { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
     { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot' },
