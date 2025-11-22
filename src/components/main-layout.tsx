@@ -19,22 +19,26 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { users, notifications } from '@/lib/data';
+import { users } from '@/lib/data';
+import type { Notification } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const currentUser = users.find(u => u.name === 'You');
 
-  const navItems = [
-    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
-    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
-    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
-  ];
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    // In a real app, you'd fetch this from an API
+    import('@/lib/data').then(data => setNotifications(data.notifications));
+  }, []);
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -45,7 +49,21 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    toast({
+        title: 'Notifications updated',
+        description: 'All notifications have been marked as read.',
+    });
+  };
+
   const unreadNotifications = notifications.filter(n => !n.read).length;
+
+  const navItems = [
+    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
+    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
+    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
+  ];
 
   return (
     <div className="flex min-h-screen w-full">
@@ -156,7 +174,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   </CardContent>
                   <CardFooter className="p-2 border-t">
-                      <Button variant="link" size="sm" className="w-full">Mark all as read</Button>
+                      <Button variant="link" size="sm" className="w-full" onClick={markAllAsRead} disabled={unreadNotifications === 0}>
+                        Mark all as read
+                      </Button>
                   </CardFooter>
                 </Card>
               </PopoverContent>
