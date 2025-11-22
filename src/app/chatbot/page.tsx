@@ -20,12 +20,17 @@ type Message = {
 };
 
 const botUser = {
-    name: 'AI Companion',
+    name: 'Prince',
     avatarUrl: '/bot-avatar.png'
 };
 
+const initialMessage: Message = {
+    role: 'model',
+    content: "Hello there, my name is Prince. How can I help you today?"
+}
+
 export default function ChatbotPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>([initialMessage]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -52,7 +57,8 @@ export default function ChatbotPage() {
         setIsLoading(true);
     
         try {
-          const history = messages.map(m => ({ role: m.role, content: m.content }));
+          // Exclude the initial greeting from history
+          const history = messages.slice(1).map(m => ({ role: m.role, content: m.content }));
           const result = await chatWithBot({ history, message: input });
           
           const botMessage: Message = { role: 'model', content: result.response };
