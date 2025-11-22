@@ -94,7 +94,7 @@ export default function SubmitInitiativePage() {
 
       toast({
         title: 'Submission Successful!',
-        description: 'Your submission has been sent for review. You will be notified upon approval.',
+        description: "Your submission has been sent for review. Please allow up to 24 hours for approval.",
       });
 
       router.push('/websites');
