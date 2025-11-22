@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -208,7 +209,7 @@ export default function ProfilePage() {
                                     <CardTitle className="flex items-center gap-2">
                                         <Award className="text-yellow-500" />
                                         Badges
-                                    </Title>
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {user.badges.map(badge => {
