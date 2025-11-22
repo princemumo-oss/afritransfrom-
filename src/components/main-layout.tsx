@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -67,6 +67,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: '/reels', icon: Clapperboard, label: 'Reels', tooltip: 'Reels' },
     { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect' },
     { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
+    { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot' },
     { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
     { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools' },
   ];
