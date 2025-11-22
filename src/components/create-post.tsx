@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Image as ImageIcon, Send, Loader2, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Send, Loader2, Sparkles, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   filterContentAndSuggestHashtags,
@@ -27,12 +27,30 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
   const [analysisResult, setAnalysisResult] = useState<ContentFilteringAndHashtagSuggestionsOutput | null>(null);
   const { toast } = useToast();
   const currentUser = users.find(u => u.name === 'You');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const handlePhotoUpload = () => {
-    // This is a mock. In a real app, this would open a file picker.
-    const mockPhoto = 'https://picsum.photos/seed/newpost/600/400';
-    setPhoto(mockPhoto);
+    fileInputRef.current?.click();
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhoto(null);
+    if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  }
 
   const handleAnalyzeAndPost = async () => {
     if (!content.trim()) {
@@ -47,9 +65,11 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
     setAnalysisResult(null);
 
     try {
-      // In a real app, if a photo is selected, you'd convert it to a data URI.
-      // For this example, we'll pass undefined for photoDataUri.
-      const result = await filterContentAndSuggestHashtags({ content: analysisResult ? analysisResult.filteredContent : content });
+      const result = await filterContentAndSuggestHashtags({ 
+        content: analysisResult ? analysisResult.filteredContent : content,
+        photoDataUri: photo ?? undefined
+      });
+
       if (!result.isContentAllowed) {
         toast({
           variant: 'destructive',
@@ -61,6 +81,7 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
         setAnalysisResult(result);
       }
     } catch (error) {
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -83,6 +104,9 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
     setContent('');
     setPhoto(null);
     setAnalysisResult(null);
+    if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
   }
   
   const addHashtag = (hashtag: string) => {
@@ -105,6 +129,13 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
               className="mb-2 min-h-24"
               disabled={isLoading || !!analysisResult}
             />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/*"
+            />
             {photo && (
               <div className="relative mb-2">
                 <Image
@@ -113,8 +144,17 @@ export default function CreatePost({ onAddPost }: CreatePostProps) {
                   width={600}
                   height={400}
                   className="rounded-lg object-cover w-full"
-                  data-ai-hint="placeholder image"
+                  data-ai-hint="user uploaded image"
                 />
+                 <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-7 w-7"
+                  onClick={removePhoto}
+                  disabled={isLoading || !!analysisResult}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             )}
             
