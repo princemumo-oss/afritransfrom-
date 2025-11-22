@@ -13,10 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, MessageCircle, Bell, Image as ImageIcon, ShieldCheck, Flag, ShieldQuestion, Users as UsersIcon, LifeBuoy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import type { User } from '@/lib/data';
+import { doc } from 'firebase/firestore';
 
 function ThemeSwitcher() {
     const { theme, setTheme } = useTheme();
@@ -63,11 +65,15 @@ function ThemeSwitcher() {
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const currentUser = users.find(u => u.name === 'You');
+    
+    const firestore = useFirestore();
+    const { user: authUser } = useUser();
+    const userProfileDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [firestore, authUser]);
+    const { data: currentUser, isLoading: isUserLoading } = useDoc<User>(userProfileDocRef);
 
-    // States for various settings
-    const [name, setName] = useState(currentUser?.name || 'You');
-    const [bio, setBio] = useState(currentUser?.bio || 'This is your bio. You can edit it!');
+    // States for various settings, initialized from currentUser
+    const [name, setName] = useState('');
+    const [bio, setBio] = useState('');
     const [notifications, setNotifications] = useState({
         friendRequests: true,
         comments: true,
@@ -97,12 +103,25 @@ export default function SettingsPage() {
         downloadPermissions: 'friends',
     });
     
+     useEffect(() => {
+        if (currentUser) {
+            setName(`${currentUser.firstName} ${currentUser.lastName}`);
+            setBio(currentUser.bio || '');
+            // Here you would load saved settings for notifications, privacy, etc.
+            // For now, we'll just use the defaults.
+        }
+    }, [currentUser]);
+    
     const handleProfileSave = () => {
+        if (!userProfileDocRef) return;
+        const [firstName, ...lastNameParts] = name.split(' ');
+        const lastName = lastNameParts.join(' ');
+
+        updateDocumentNonBlocking(userProfileDocRef, { firstName, lastName, bio });
         toast({
             title: 'Profile Saved',
             description: 'Your profile information has been updated.',
         });
-        // In a real app, you would update the user data here
     };
 
     const handlePrivacySave = () => {
@@ -110,6 +129,7 @@ export default function SettingsPage() {
             title: 'Privacy Settings Saved',
             description: 'Your privacy preferences have been updated.',
         });
+        // In a real app, you would save these settings to the user's profile
     };
 
     const handleMessagingSave = () => {
@@ -125,6 +145,10 @@ export default function SettingsPage() {
             description: 'Your media and content preferences have been updated.',
         });
     };
+
+    if (isUserLoading || !currentUser) {
+         return <MainLayout><div className="mx-auto grid w-full max-w-4xl gap-6"><Skeleton className="h-96 w-full" /></div></MainLayout>
+    }
 
 
     return (
