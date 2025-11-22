@@ -23,6 +23,15 @@
           "description": "User's email address.",
           "format": "email"
         },
+        "birthday": {
+          "type": "string",
+          "description": "User's date of birth.",
+          "format": "date"
+        },
+        "gender": {
+          "type": "string",
+          "description": "User's gender identity."
+        },
         "profilePicture": {
           "type": "string",
           "description": "URL of the user's profile picture.",
