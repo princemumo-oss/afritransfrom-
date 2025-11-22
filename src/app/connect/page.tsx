@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { PhoneOff, SkipForward, Video, VideoOff, Send, Mic, MicOff } from 'lucide-react';
+import { PhoneOff, SkipForward, Video, VideoOff, Send, Mic, MicOff, Phone, PhoneIncoming } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
 import type { User } from '@/lib/data';
@@ -15,96 +15,103 @@ import { cn } from '@/lib/utils';
 import { ChatBubbleManager } from '@/components/chat-bubble-manager';
 import { Input } from '@/components/ui/input';
 import { useChatBubbles } from '@/hooks/use-chat-bubbles';
-
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useWebRTC } from '@/hooks/use-webrtc';
+import { collection, onSnapshot, query, where, getDocs, doc } from 'firebase/firestore';
 
 export default function ConnectPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectedUser, setConnectedUser] = useState<User | null>(null);
-  const [callActive, setCallActive] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
-
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const [incomingCall, setIncomingCall] = useState<{ callId: string; from: string } | null>(null);
+  
+  const firestore = useFirestore();
+  const { user: currentUser } = useUser();
   const { toast } = useToast();
   const { addBubble } = useChatBubbles();
-  const currentUser = users.find(u => u.name === 'You');
+  
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+  const { startCall, joinCall, hangUp, localStream, remoteStream, isInCall, toggleMute, toggleVideo: toggleWebRTCVideo } = useWebRTC(localVideoRef, remoteVideoRef, currentUser?.uid);
+
+  const callsCollection = useMemoFirebase(() => collection(firestore, 'calls'), [firestore]);
 
   useEffect(() => {
-    // Clean up streams on component unmount
-    return () => {
-      if (localVideoRef.current && localVideoRef.current.srcObject) {
-        const stream = localVideoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
+    if (!currentUser || !callsCollection) return;
 
-  const getCameraPermission = async () => {
-    if (hasCameraPermission) {
-      startConnection();
-      return;
+    const q = query(callsCollection, where("answer", "==", null));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const callData = change.doc.data();
+                if(callData.offer.uid !== currentUser.uid) {
+                    setIncomingCall({ callId: change.doc.id, from: callData.offer.uid });
+                }
+            }
+        });
+    });
+
+    return () => unsubscribe();
+
+  }, [currentUser, callsCollection]);
+
+
+  useEffect(() => {
+    if (localStream && localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+        setHasCameraPermission(true);
     }
-    
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setHasCameraPermission(true);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-      startConnection();
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Camera Access Denied',
-        description: 'Please enable camera and microphone permissions in your browser settings.',
-      });
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
     }
-  };
-
-  const startConnection = () => {
-    setIsConnecting(true);
-    setCallActive(false);
-
-    // Simulate finding a random user
-    setTimeout(() => {
-      const availableUsers = users.filter(u => u.name !== 'You');
-      const randomUser = availableUsers[Math.floor(Math.random() * availableUsers.length)];
-      setConnectedUser(randomUser);
-      setIsConnecting(false);
-      setCallActive(true);
-      toast({
-        title: 'Connected!',
-        description: `You are now talking to ${randomUser.name}.`,
-      });
-    }, 2000);
-  };
+  }, [remoteStream]);
   
-  const endCall = () => {
-      setCallActive(false);
-      setConnectedUser(null);
-      // In a real app, you would also stop the remote stream
+  const handleStartCall = async () => {
+    if (!callsCollection || !currentUser) return;
+    setIsConnecting(true);
+    const availableUsers = users.filter(u => u.id !== currentUser.uid);
+    const randomUser = availableUsers[Math.floor(Math.random() * availableUsers.length)];
+    setConnectedUser(randomUser);
+
+    await startCall(randomUser.id);
+    setIsConnecting(false);
+    toast({
+        title: 'Calling...',
+        description: `Calling ${randomUser.name}.`,
+    });
+  }
+  
+  const handleAnswerCall = async () => {
+    if(incomingCall){
+        await joinCall(incomingCall.callId);
+        const caller = users.find(u => u.id === incomingCall.from);
+        setConnectedUser(caller || null);
+        setIncomingCall(null);
+    }
   }
 
+  const handleHangUp = () => {
+    hangUp();
+    setConnectedUser(null);
+    setIncomingCall(null);
+  };
+
   const toggleMic = () => {
-      if (localVideoRef.current?.srcObject) {
-          const stream = localVideoRef.current.srcObject as MediaStream;
-          stream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
-          setIsMicMuted(!isMicMuted);
-      }
+      toggleMute(!isMicMuted);
+      setIsMicMuted(!isMicMuted);
   }
   
   const toggleVideo = () => {
-      if (localVideoRef.current?.srcObject) {
-          const stream = localVideoRef.current.srcObject as MediaStream;
-          stream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
-          setIsVideoMuted(!isVideoMuted);
-      }
+      toggleWebRTCVideo(!isVideoMuted);
+      setIsVideoMuted(!isVideoMuted);
   }
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -112,14 +119,14 @@ export default function ConnectPage() {
     if (!chatMessage.trim() || !currentUser) return;
     
     // In a real app, this would send the message over a WebSocket or WebRTC data channel.
-    // For this simulation, we'll just add it to the local user's screen.
-    // To make it look like the other person is replying, we can alternate who the bubble is from.
+    const currentUserData = users.find(u => u.id === currentUser.uid);
+    if (!currentUserData) return;
+
     addBubble({
-        user: currentUser,
+        user: currentUserData,
         text: chatMessage
     });
     
-    // Simulate a reply from the connected user
     if(connectedUser) {
         setTimeout(() => {
             addBubble({
@@ -145,8 +152,8 @@ export default function ConnectPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-                <video ref={localVideoRef} className={cn("h-full w-full object-cover", (!hasCameraPermission || isVideoMuted) && 'hidden')} autoPlay muted />
-                {(!hasCameraPermission || isVideoMuted) && (
+                <video ref={localVideoRef} className={cn("h-full w-full object-cover", (!localStream || isVideoMuted) && 'hidden')} autoPlay muted />
+                {(!localStream || isVideoMuted) && (
                   <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center">
                     <VideoOff className="h-12 w-12 text-muted-foreground" />
                     <p className="mt-2 text-muted-foreground">Your camera is off</p>
@@ -157,10 +164,9 @@ export default function ConnectPage() {
                 </div>
               </div>
               <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-                 {callActive && connectedUser ? (
+                 {isInCall && connectedUser ? (
                     <>
-                        {/* In a real app, this would be a remote stream */}
-                        <video ref={remoteVideoRef} className="h-full w-full object-cover" autoPlay poster={connectedUser.avatarUrl} />
+                        <video ref={remoteVideoRef} className="h-full w-full object-cover" autoPlay />
                          <div className="absolute bottom-2 left-2 rounded-md bg-black/50 px-2 py-1 text-xs text-white">
                             {connectedUser.name}
                         </div>
@@ -195,10 +201,17 @@ export default function ConnectPage() {
              )}
             <div className="mt-4 flex flex-col items-center gap-4">
               <div className="flex justify-center gap-4">
-                 {!callActive && !isConnecting ? (
-                 <Button size="lg" onClick={getCameraPermission} disabled={isConnecting}>
-                    {isConnecting ? 'Connecting...' : 'Start Connecting'}
-                </Button>
+                 {!isInCall && !isConnecting ? (
+                  <>
+                    <Button size="lg" onClick={handleStartCall} disabled={isConnecting}>
+                       <Phone className='mr-2' /> Call Random
+                    </Button>
+                    {incomingCall && (
+                        <Button size="lg" onClick={handleAnswerCall} className="bg-green-500 hover:bg-green-600">
+                          <PhoneIncoming className="mr-2" /> Answer Call
+                        </Button>
+                    )}
+                  </>
               ) : (
                 <>
                     <Button size="lg" variant="outline" onClick={toggleMic} className="rounded-full w-14 h-14">
@@ -209,11 +222,11 @@ export default function ConnectPage() {
                         {isVideoMuted ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
                         <span className="sr-only">{isVideoMuted ? 'Turn on Camera' : 'Turn off Camera'}</span>
                     </Button>
-                    <Button size="lg" variant="secondary" onClick={startConnection} disabled={isConnecting} className="rounded-full w-14 h-14">
+                    <Button size="lg" variant="secondary" onClick={handleStartCall} disabled={isConnecting} className="rounded-full w-14 h-14">
                         <SkipForward className="h-6 w-6" />
                         <span className="sr-only">Next</span>
                     </Button>
-                    <Button size="lg" variant="destructive" onClick={endCall} className="rounded-full w-14 h-14">
+                    <Button size="lg" variant="destructive" onClick={handleHangUp} className="rounded-full w-14 h-14">
                         <PhoneOff className="h-6 w-6" />
                         <span className="sr-only">End Call</span>
                     </Button>
@@ -221,7 +234,7 @@ export default function ConnectPage() {
               )}
               </div>
 
-               {callActive && (
+               {isInCall && (
                   <form onSubmit={handleSendMessage} className="w-full max-w-lg flex gap-2">
                     <Input 
                         placeholder="Say something..."
@@ -241,3 +254,5 @@ export default function ConnectPage() {
     </MainLayout>
   );
 }
+
+    
