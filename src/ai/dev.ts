@@ -5,3 +5,4 @@ import '@/ai/flows/content-filtering-hashtag-suggestions.ts';
 import '@/ai/flows/translate-text.ts';
 import '@/ai/flows/story-generator.ts';
 import '@/ai/flows/chatbot.ts';
+import '@/ai/flows/text-to-speech.ts';
