@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, Suspense } from 'react';
@@ -7,8 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Video, Upload, Send, Loader2, RefreshCw, Eye, Users, Hourglass, Music, Sparkles } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { ArrowLeft, Video, Upload, Send, Loader2, RefreshCw, Eye, Users, Hourglass, Music, Sparkles, Scissors, ImageIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
@@ -202,12 +203,20 @@ function CreateReelPageContent() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                       <div className="grid grid-cols-3 gap-4">
-                          <div className="col-span-1">
+                          <div className="relative col-span-1">
                               {media.type === 'image' ? (
                                   <img src={media.url} alt="Preview" className="rounded-lg object-cover aspect-[9/16]" />
                               ) : (
                                   <video src={media.url} muted loop autoPlay className="rounded-lg object-cover aspect-[9/16]" />
                               )}
+                              <div className="absolute bottom-2 left-2 right-2 flex justify-center gap-2">
+                                <Button type="button" size="sm" variant="secondary" className="h-8 backdrop-blur-sm bg-black/50 text-white hover:bg-black/70" disabled>
+                                    <ImageIcon className="mr-2 h-4 w-4" /> Cover
+                                </Button>
+                                <Button type="button" size="sm" variant="secondary" className="h-8 backdrop-blur-sm bg-black/50 text-white hover:bg-black/70" disabled>
+                                    <Scissors className="mr-2 h-4 w-4" /> Trim
+                                </Button>
+                              </div>
                           </div>
                           <div className="col-span-2 space-y-4">
                               <FormField
