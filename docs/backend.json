@@ -317,10 +317,27 @@
           "format": "uri",
           "description": "The official website URL for the initiative."
         },
-        "donationLink": {
-          "type": "string",
-          "format": "uri",
-          "description": "A link to a payment processor for donations."
+        "paymentLinks": {
+          "type": "object",
+          "description": "An object containing links to various payment processors for donations.",
+          "properties": {
+            "paypal": {
+              "type": "string",
+              "format": "uri"
+            },
+            "stripe": {
+              "type": "string",
+              "format": "uri"
+            },
+            "paystack": {
+              "type": "string",
+              "format": "uri"
+            },
+            "flutterwave": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
         },
         "submittedBy": {
           "type": "string",

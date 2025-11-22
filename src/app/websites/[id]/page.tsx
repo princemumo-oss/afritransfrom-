@@ -63,7 +63,27 @@ function MediaGallery({ events }: { events: InitiativeEvent[] | undefined }) {
   );
 }
 
-function ProductGallery({ products }: { products: Product[] | undefined }) {
+function ProductCard({ product, paymentLinks }: { product: Product, paymentLinks: Initiative['paymentLinks'] }) {
+    return (
+        <Card className="flex flex-col">
+            <CardHeader className="p-0">
+                <div className="relative aspect-video overflow-hidden rounded-t-lg">
+                    <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+                </div>
+            </CardHeader>
+            <CardContent className="flex-1 p-4">
+                <h3 className="font-semibold">{product.name}</h3>
+                <p className="text-sm text-muted-foreground">{product.description}</p>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center p-4 pt-0">
+                <p className="font-bold">{product.price}</p>
+                <PaymentDialog product={product} paymentLinks={paymentLinks} />
+            </CardFooter>
+        </Card>
+    );
+}
+
+function ProductGallery({ products, paymentLinks }: { products: Product[] | undefined, paymentLinks: Initiative['paymentLinks'] }) {
     if (!products || products.length === 0) {
         return <p className="text-center text-muted-foreground">No products available at this time.</p>;
     }
@@ -71,29 +91,64 @@ function ProductGallery({ products }: { products: Product[] | undefined }) {
     return (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map(product => (
-                <Card key={product.id} className="flex flex-col">
-                    <CardHeader className="p-0">
-                        <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-4">
-                        <h3 className="font-semibold">{product.name}</h3>
-                        <p className="text-sm text-muted-foreground">{product.description}</p>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center p-4 pt-0">
-                        <p className="font-bold">{product.price}</p>
-                        <Button asChild size="sm">
-                            <a href={product.purchaseUrl} target="_blank" rel="noopener noreferrer">
-                                <ShoppingCart className="mr-2 h-4 w-4" /> Buy Now
-                            </a>
-                        </Button>
-                    </CardFooter>
-                </Card>
+                <ProductCard key={product.id} product={product} paymentLinks={paymentLinks} />
             ))}
         </div>
     );
 }
+
+function PaymentDialog({ product, paymentLinks }: { product: Product, paymentLinks: Initiative['paymentLinks'] }) {
+    const availableLinks = Object.entries(paymentLinks || {}).filter(([_, url]) => url);
+    
+    if (!product.purchaseUrl && availableLinks.length === 0) {
+        return <Button size="sm" disabled><ShoppingCart className="mr-2 h-4 w-4" /> Not available</Button>
+    }
+
+    // If only one legacy purchaseUrl exists, just link to it.
+    if (product.purchaseUrl && availableLinks.length === 0) {
+         return (
+             <Button asChild size="sm">
+                <a href={product.purchaseUrl} target="_blank" rel="noopener noreferrer">
+                    <ShoppingCart className="mr-2 h-4 w-4" /> Buy Now
+                </a>
+            </Button>
+         )
+    }
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button size="sm"><ShoppingCart className="mr-2 h-4 w-4" /> Buy Now</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Complete Your Purchase</DialogTitle>
+                    <DialogDescription>
+                        Select a payment method to buy the "{product.name}".
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col space-y-3 pt-4">
+                    {availableLinks.map(([provider, url]) => (
+                        <Button key={provider} asChild size="lg">
+                             <a href={url!} target="_blank" rel="noopener noreferrer">
+                                Pay with {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                            </a>
+                        </Button>
+                    ))}
+                    {product.purchaseUrl && availableLinks.length > 0 && <p className='text-center text-xs text-muted-foreground py-2'>Or</p>}
+                     {product.purchaseUrl && (
+                        <Button asChild size="lg" variant="secondary">
+                             <a href={product.purchaseUrl} target="_blank" rel="noopener noreferrer">
+                                Pay with other method
+                            </a>
+                        </Button>
+                     )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 function CommunityChat({ initiative, currentUser }: { initiative: Initiative; currentUser: User | null }) {
     const firestore = useFirestore();
@@ -220,6 +275,8 @@ export default function InitiativeDetailPage() {
     );
   }
 
+  const hasPaymentLinks = initiative.paymentLinks && Object.values(initiative.paymentLinks).some(link => link);
+
   return (
     <MainLayout>
       <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -243,12 +300,28 @@ export default function InitiativeDetailPage() {
                         </a>
                     </Button>
                 )}
-                {initiative.donationLink && (
-                    <Button asChild variant="secondary">
-                        <a href={initiative.donationLink} target="_blank" rel="noopener noreferrer">
-                            <DollarSign className="mr-2 h-4 w-4" /> Donate
-                        </a>
-                    </Button>
+                {hasPaymentLinks && (
+                   <Dialog>
+                        <DialogTrigger asChild>
+                             <Button variant="secondary">
+                                <DollarSign className="mr-2 h-4 w-4" /> Donate
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Support {initiative.name}</DialogTitle>
+                                <DialogDescription>
+                                    Choose your preferred way to contribute.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex flex-col space-y-3 pt-4">
+                                {initiative.paymentLinks?.paypal && <Button asChild size="lg"><a href={initiative.paymentLinks.paypal} target="_blank" rel="noopener noreferrer">PayPal</a></Button>}
+                                {initiative.paymentLinks?.stripe && <Button asChild size="lg"><a href={initiative.paymentLinks.stripe} target="_blank" rel="noopener noreferrer">Stripe</a></Button>}
+                                {initiative.paymentLinks?.paystack && <Button asChild size="lg"><a href={initiative.paymentLinks.paystack} target="_blank" rel="noopener noreferrer">Paystack</a></Button>}
+                                {initiative.paymentLinks?.flutterwave && <Button asChild size="lg"><a href={initiative.paymentLinks.flutterwave} target="_blank" rel="noopener noreferrer">Flutterwave</a></Button>}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 )}
             </div>
           </CardHeader>
@@ -267,7 +340,7 @@ export default function InitiativeDetailPage() {
                 <MediaGallery events={initiative.events?.upcoming} />
               </TabsContent>
               <TabsContent value="products" className="mt-4">
-                <ProductGallery products={initiative.products || []} />
+                <ProductGallery products={initiative.products || []} paymentLinks={initiative.paymentLinks} />
               </TabsContent>
               <TabsContent value="chat" className="mt-4">
                  <CommunityChat initiative={initiative} currentUser={currentUser} />

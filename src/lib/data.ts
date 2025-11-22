@@ -137,7 +137,12 @@ export type Initiative = {
     description: string;
     logoUrl: string;
     websiteUrl?: string;
-    donationLink?: string;
+    paymentLinks?: {
+      paypal?: string;
+      stripe?: string;
+      paystack?: string;
+      flutterwave?: string;
+    };
     cta?: string;
     events: {
         past: InitiativeEvent[];

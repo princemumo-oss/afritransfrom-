@@ -23,7 +23,12 @@ const initiativeSchema = z.object({
   name: z.string().min(3, 'Initiative name must be at least 3 characters.'),
   description: z.string().min(20, 'Description must be at least 20 characters.').max(200, 'Description cannot exceed 200 characters.'),
   logoUrl: z.string().url('Please upload a logo.'),
-  donationLink: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  paymentLinks: z.object({
+    paypal: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+    stripe: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+    paystack: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+    flutterwave: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  }).optional(),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -43,7 +48,12 @@ export default function SubmitInitiativePage() {
       name: '',
       description: '',
       logoUrl: '',
-      donationLink: '',
+      paymentLinks: {
+        paypal: '',
+        stripe: '',
+        paystack: '',
+        flutterwave: '',
+      },
     },
   });
 
@@ -157,22 +167,68 @@ export default function SubmitInitiativePage() {
                     </FormItem>
                   )}
                 />
-                 <FormField
-                  control={form.control}
-                  name="donationLink"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Donation/Payment Link</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://www.paypal.me/your-name" {...field} disabled={isSubmitting} />
-                      </FormControl>
-                      <FormDescription>
-                        Provide a payment link from services like PayPal, Stripe, Paystack, or Flutterwave.
+                 
+                <div>
+                    <FormLabel>Donation/Payment Links</FormLabel>
+                     <FormDescription className="mb-4">
+                        Provide payment links from services like PayPal, Stripe, Paystack, or Flutterwave.
                       </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <div className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="paymentLinks.paypal"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className="text-xs">PayPal</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://www.paypal.me/your-name" {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="paymentLinks.stripe"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className="text-xs">Stripe</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://buy.stripe.com/..." {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="paymentLinks.paystack"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className="text-xs">Paystack</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://paystack.com/pay/..." {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="paymentLinks.flutterwave"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className="text-xs">Flutterwave</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://flutterwave.com/pay/..." {...field} disabled={isSubmitting} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="logoUrl"
