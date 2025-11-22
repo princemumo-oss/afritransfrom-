@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from "next-themes"
 import { MainLayout } from '@/components/main-layout';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,53 @@ import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, MessageCircle, Bell, Image as ImageIcon, ShieldCheck, Flag, ShieldQuestion, Users as UsersIcon, LifeBuoy } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function ThemeSwitcher() {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Skeleton className="h-[78px] w-full" />
+                <Skeleton className="h-[78px] w-full" />
+                <Skeleton className="h-[78px] w-full" />
+            </div>
+        )
+    }
+
+    return (
+        <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+                <RadioGroupItem value="light" id="light" className="peer sr-only" />
+                <Label htmlFor="light" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                    Light
+                </Label>
+            </div>
+            <div>
+                <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
+                <Label htmlFor="dark" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                    Dark
+                </Label>
+            </div>
+            <div>
+                <RadioGroupItem value="system" id="system" className="peer sr-only" />
+                <Label htmlFor="system" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                    System
+                </Label>
+            </div>
+        </RadioGroup>
+    );
+}
+
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const { theme, setTheme } = useTheme();
     const currentUser = users.find(u => u.name === 'You');
 
     // States for various settings
@@ -121,26 +164,7 @@ export default function SettingsPage() {
                         <CardDescription>Choose how afritransform looks and feels.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <RadioGroup value={theme} onValueChange={setTheme} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <div>
-                                <RadioGroupItem value="light" id="light" className="peer sr-only" />
-                                <Label htmlFor="light" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                    Light
-                                </Label>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="dark" id="dark" className="peer sr-only" />
-                                <Label htmlFor="dark" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                    Dark
-                                </Label>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="system" id="system" className="peer sr-only" />
-                                <Label htmlFor="system" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                    System
-                                </Label>
-                            </div>
-                        </RadioGroup>
+                        <ThemeSwitcher />
                     </CardContent>
                 </Card>
 
@@ -537,3 +561,5 @@ export default function SettingsPage() {
 
     
 }
+
+    
