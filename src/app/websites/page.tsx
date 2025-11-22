@@ -1,17 +1,21 @@
+
 'use client';
 
+import { useState } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, PlusCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, PlusCircle, Loader2, Search } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Initiative } from '@/lib/data';
+import { Input } from '@/components/ui/input';
 
 export default function WebsitesPage() {
     const firestore = useFirestore();
+    const [searchTerm, setSearchTerm] = useState('');
 
     const initiativesQuery = useMemoFirebase(() => 
         firestore ? query(collection(firestore, 'initiatives'), where('status', '==', 'approved')) : null,
@@ -20,14 +24,28 @@ export default function WebsitesPage() {
 
     const { data: approvedInitiatives, isLoading } = useCollection<Initiative>(initiativesQuery);
 
+    const filteredInitiatives = approvedInitiatives?.filter(initiative => 
+        initiative.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        initiative.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
   return (
     <MainLayout>
       <div className="mx-auto grid w-full max-w-4xl gap-6">
-        <div className="text-center">
+        <div className="space-y-4 text-center">
           <h1 className="text-3xl font-bold">Websites</h1>
           <p className="text-muted-foreground">
             Discover important initiatives and resources from our partners.
           </p>
+           <div className="relative mx-auto max-w-md">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+                placeholder="Search websites..." 
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -36,7 +54,7 @@ export default function WebsitesPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </Card>
           ) : (
-            approvedInitiatives?.map((site) => (
+            filteredInitiatives?.map((site) => (
                 <Link href={`/websites/${site.id}`} key={site.id} className="group">
                     <Card className="flex h-full flex-col transition-all group-hover:shadow-lg group-hover:-translate-y-1">
                     <CardHeader className="items-center text-center">
@@ -78,6 +96,11 @@ export default function WebsitesPage() {
               </CardFooter>
             </Card>
         </div>
+        {!isLoading && filteredInitiatives?.length === 0 && (
+             <p className="text-center text-muted-foreground col-span-1 md:col-span-2">
+                No websites found matching your search.
+            </p>
+        )}
       </div>
     </MainLayout>
   );
