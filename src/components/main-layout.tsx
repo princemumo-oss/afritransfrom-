@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Home, MessageSquare, Users, Settings, Bell, Search } from 'lucide-react';
+import React from 'react';
 
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import { users } from '@/lib/data';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const currentUser = users.find(u => u.name === 'You');
 
   const navItems = [
@@ -29,6 +31,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
     { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
   ];
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const query = e.currentTarget.value;
+      if (query.trim()) {
+        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      }
+    }
+  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -92,8 +103,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder="Search everything..."
               className="w-full rounded-lg bg-card pl-8 md:w-[280px] lg:w-[320px]"
+              onKeyDown={handleSearch}
             />
           </div>
           <div className="ml-auto flex items-center gap-2">
