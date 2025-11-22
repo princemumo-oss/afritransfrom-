@@ -28,6 +28,7 @@ export type User = {
   bio: string;
   followers: number;
   following: number;
+  onlineStatus?: 'online' | 'offline';
   badges?: Badge[];
   mood?: {
     emoji: string;
@@ -108,6 +109,7 @@ const usersData: Omit<User, 'questions'>[] = [
     bio: 'Software Engineer and cat lover. 🐈 #DevLife',
     followers: 1500,
     following: 250,
+    onlineStatus: 'online',
     badges: [badges['pioneer'], badges['community-builder']],
     location: 'Nairobi, Kenya',
     work: { company: 'TechNova', position: 'Senior Developer' },
@@ -125,6 +127,7 @@ const usersData: Omit<User, 'questions'>[] = [
     bio: 'Designer, photographer, and coffee enthusiast. ☕',
     followers: 780,
     following: 500,
+    onlineStatus: 'offline',
     badges: [badges['first-post']],
     location: 'Lagos, Nigeria',
     work: { company: 'Creative Minds', position: 'Lead Designer' },
@@ -140,6 +143,7 @@ const usersData: Omit<User, 'questions'>[] = [
     bio: 'Just a dude who loves hiking. ⛰️',
     followers: 320,
     following: 180,
+    onlineStatus: 'online',
     badges: [],
     location: 'Cape Town, South Africa',
     work: { company: 'Adventure Co.', position: 'Tour Guide' },
@@ -155,6 +159,7 @@ const usersData: Omit<User, 'questions'>[] = [
     bio: 'Exploring the world one city at a time. 🌍',
     followers: 2100,
     following: 50,
+    onlineStatus: 'offline',
     badges: [badges['pioneer']],
     location: 'Accra, Ghana',
     work: { company: 'Globe Trotters', position: 'Travel Blogger' },
@@ -171,6 +176,7 @@ const usersData: Omit<User, 'questions'>[] = [
     bio: 'This is your bio. You can edit it!',
     followers: 42,
     following: 84,
+    onlineStatus: 'online',
     badges: [badges['first-post']],
     location: 'Cairo, Egypt',
     work: { company: 'My Company', position: 'My Role' },

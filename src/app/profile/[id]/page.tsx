@@ -106,6 +106,9 @@ export default function ProfilePage() {
                                     <AvatarImage src={user.avatarUrl} alt={user.name} />
                                     <AvatarFallback className="text-5xl">{user.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
+                                {user.onlineStatus === 'online' && (
+                                    <span className="absolute bottom-4 right-4 block h-5 w-5 rounded-full border-2 border-background bg-green-500" />
+                                )}
                                 {user.mood && !moodExpired && (
                                     <TooltipProvider>
                                         <Tooltip>
@@ -238,10 +241,15 @@ export default function ProfilePage() {
                                 <div className="grid grid-cols-3 gap-2">
                                     {userFriends.slice(0, 9).map(friend => (
                                         <Link key={friend.id} href={`/profile/${friend.id}`} title={friend.name}>
-                                            <Avatar className="h-16 w-16">
-                                                <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                                                <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
+                                            <div className="relative">
+                                                <Avatar className="h-16 w-16">
+                                                    <AvatarImage src={friend.avatarUrl} alt={friend.name} />
+                                                    <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                {friend.onlineStatus === 'online' && (
+                                                    <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full border-2 border-background bg-green-500" />
+                                                )}
+                                            </div>
                                         </Link>
                                     ))}
                                 </div>

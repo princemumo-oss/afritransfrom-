@@ -27,10 +27,15 @@ export default function FriendsPage() {
                             <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {friends.map(friend => (
                                     <Card key={friend.id} className="flex flex-col items-center p-4 text-center">
-                                        <Avatar className="mb-4 h-20 w-20">
-                                            <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                                            <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+                                        <div className="relative mb-4">
+                                            <Avatar className="h-20 w-20">
+                                                <AvatarImage src={friend.avatarUrl} alt={friend.name} />
+                                                <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            {friend.onlineStatus === 'online' && (
+                                                <span className="absolute bottom-1 right-1 block h-4 w-4 rounded-full border-2 border-card bg-green-500" />
+                                            )}
+                                        </div>
                                         <p className="font-semibold">{friend.name}</p>
                                         <p className="truncate text-sm text-muted-foreground">{friend.bio}</p>
                                     </Card>
@@ -48,10 +53,15 @@ export default function FriendsPage() {
                                 {friendRequests.map(request => (
                                     <div key={request.user.id} className="flex items-center justify-between rounded-lg p-2 hover:bg-accent">
                                         <div className="flex items-center gap-4">
-                                            <Avatar className="h-12 w-12">
-                                                <AvatarImage src={request.user.avatarUrl} alt={request.user.name} />
-                                                <AvatarFallback>{request.user.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
+                                            <div className="relative">
+                                                <Avatar className="h-12 w-12">
+                                                    <AvatarImage src={request.user.avatarUrl} alt={request.user.name} />
+                                                    <AvatarFallback>{request.user.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                 {request.user.onlineStatus === 'online' && (
+                                                    <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-background bg-green-500" />
+                                                )}
+                                            </div>
                                             <div>
                                                 <p className="font-semibold">{request.user.name}</p>
                                                 <p className="text-sm text-muted-foreground">{request.user.bio}</p>

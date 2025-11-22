@@ -26,10 +26,15 @@ export default function MessagesPage() {
                                         key={convo.id}
                                         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-all hover:bg-accent hover:text-accent-foreground ${convo.id === selectedConversation.id ? 'bg-accent text-accent-foreground' : ''}`}
                                     >
-                                        <Avatar className="h-9 w-9">
-                                            <AvatarImage src={convo.participant.avatarUrl} alt={convo.participant.name} />
-                                            <AvatarFallback>{convo.participant.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
+                                        <div className="relative">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarImage src={convo.participant.avatarUrl} alt={convo.participant.name} />
+                                                <AvatarFallback>{convo.participant.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                             {convo.participant.onlineStatus === 'online' && (
+                                                <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-green-500" />
+                                            )}
+                                        </div>
                                         <div className="flex-1 truncate">
                                             <div className="font-medium">{convo.participant.name}</div>
                                             <div className="text-sm text-muted-foreground">{convo.lastMessage}</div>
@@ -45,10 +50,15 @@ export default function MessagesPage() {
                 <Card className="flex flex-col">
                     <CardHeader className="flex flex-row items-center border-b">
                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.name} />
-                                <AvatarFallback>{selectedConversation.participant.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                             <div className="relative">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={selectedConversation.participant.avatarUrl} alt={selectedConversation.participant.name} />
+                                    <AvatarFallback>{selectedConversation.participant.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                 {selectedConversation.participant.onlineStatus === 'online' && (
+                                    <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-green-500" />
+                                )}
+                            </div>
                             <div className="font-medium">{selectedConversation.participant.name}</div>
                         </div>
                     </CardHeader>
