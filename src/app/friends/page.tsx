@@ -1,3 +1,4 @@
+
 import { MainLayout } from '@/components/main-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,10 @@ export default function FriendsPage() {
         <MainLayout>
             <div className="mx-auto grid w-full max-w-4xl gap-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Friends</h1>
+                    <div>
+                        <h1 className="text-3xl font-bold">Friends</h1>
+                        <p className="text-muted-foreground">Manage your connections.</p>
+                    </div>
                     <Button>
                         <UserPlus className="mr-2 h-4 w-4" /> Add Friend
                     </Button>
@@ -24,32 +28,36 @@ export default function FriendsPage() {
                     </TabsList>
                     <TabsContent value="all">
                         <Card>
-                            <CardContent className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                             <CardContent className="p-4 space-y-4">
                                 {friends.map(friend => (
-                                    <Card key={friend.id} className="flex flex-col items-center p-4 text-center">
-                                        <div className="relative mb-4">
-                                            <Avatar className="h-20 w-20">
-                                                <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                                                <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            {friend.onlineStatus === 'online' && (
-                                                <span className="absolute bottom-1 right-1 block h-4 w-4 rounded-full border-2 border-card bg-green-500" />
-                                            )}
+                                    <div key={friend.id} className="flex items-center justify-between rounded-lg p-2 hover:bg-accent">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative">
+                                                <Avatar className="h-12 w-12">
+                                                    <AvatarImage src={friend.avatarUrl} alt={friend.name} />
+                                                    <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                 {friend.onlineStatus === 'online' && (
+                                                    <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-background bg-green-500" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold">{friend.name}</p>
+                                                <p className="text-sm text-muted-foreground">{friend.bio}</p>
+                                            </div>
                                         </div>
-                                        <p className="font-semibold">{friend.name}</p>
-                                        <p className="truncate text-sm text-muted-foreground">{friend.bio}</p>
-                                    </Card>
+                                        <Button variant="outline">Message</Button>
+                                    </div>
                                 ))}
+                                 {friends.length === 0 && (
+                                    <p className="p-4 text-center text-muted-foreground">You haven't added any friends yet.</p>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
                     <TabsContent value="requests">
                          <Card>
-                            <CardHeader>
-                                <CardTitle>Friend Requests</CardTitle>
-                                <CardDescription>Accept or decline requests from other users.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 p-4">
                                 {friendRequests.map(request => (
                                     <div key={request.user.id} className="flex items-center justify-between rounded-lg p-2 hover:bg-accent">
                                         <div className="flex items-center gap-4">
@@ -68,11 +76,11 @@ export default function FriendsPage() {
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button size="icon" variant="outline">
-                                                <Check className="h-4 w-4 text-green-500" />
+                                            <Button size="icon" variant="outline" className="text-green-500 hover:bg-green-500/10 hover:text-green-600">
+                                                <Check className="h-4 w-4" />
                                             </Button>
-                                            <Button size="icon" variant="outline">
-                                                <X className="h-4 w-4 text-red-500" />
+                                            <Button size="icon" variant="outline" className="text-red-500 hover:bg-red-500/10 hover:text-red-600">
+                                                <X className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
