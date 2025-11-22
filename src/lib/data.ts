@@ -74,6 +74,7 @@ export type Message = {
     sender: User;
     content: string;
     timestamp: string;
+    reaction?: string;
 }
 
 export type Conversation = {
@@ -260,7 +261,7 @@ export const conversations: Conversation[] = [
         lastMessageTimestamp: "10:30 AM",
         messages: [
             { id: 'm1', sender: users[4], content: "Hey, how's it going?", timestamp: "10:30 AM"},
-            { id: 'm2', sender: users[0], content: "Good, you? Ready for the meeting later?", timestamp: "10:31 AM"},
+            { id: 'm2', sender: users[0], content: "Good, you? Ready for the meeting later?", timestamp: "10:31 AM", reaction: '👍'},
         ]
     },
     {

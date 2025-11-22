@@ -8,18 +8,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { conversations, users } from '@/lib/data';
-import { Send, Smile, Languages, Loader2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { conversations as initialConversations, users, type Message, type Conversation } from '@/lib/data';
+import { Send, Smile, Languages, Loader2, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { translateText } from '@/ai/flows/translate-text';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
+const messageReactions = ['❤️', '😂', '😯', '😢', '😡', '👍'];
+
 
 export default function MessagesPage() {
     const currentUser = users.find(u => u.name === 'You');
-    const selectedConversation = conversations[0]; // mock selected conversation
+    const [conversations, setConversations] = useState(initialConversations);
+    const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
 
     const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
     const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
@@ -43,6 +47,30 @@ export default function MessagesPage() {
         }
       };
 
+      const handleReaction = (messageId: string, reaction: string) => {
+        const updatedConversations = conversations.map(convo => {
+          if (convo.id === selectedConversation.id) {
+            const updatedMessages = convo.messages.map(msg => {
+              if (msg.id === messageId) {
+                // Toggle reaction
+                const newReaction = msg.reaction === reaction ? undefined : reaction;
+                return { ...msg, reaction: newReaction };
+              }
+              return msg;
+            });
+            return { ...convo, messages: updatedMessages };
+          }
+          return convo;
+        });
+        setConversations(updatedConversations);
+        
+        // Also update the selected conversation to reflect the change immediately
+        const updatedSelectedConvo = updatedConversations.find(c => c.id === selectedConversation.id);
+        if (updatedSelectedConvo) {
+            setSelectedConversation(updatedSelectedConvo);
+        }
+      };
+
     return (
         <MainLayout>
             <div className="grid h-[calc(100vh-8rem)] w-full grid-cols-1 gap-6 md:grid-cols-[300px_1fr]">
@@ -56,6 +84,7 @@ export default function MessagesPage() {
                                 {conversations.map(convo => (
                                     <button
                                         key={convo.id}
+                                        onClick={() => setSelectedConversation(convo)}
                                         className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-all hover:bg-accent', convo.id === selectedConversation.id ? 'bg-accent text-accent-foreground' : '')}
                                     >
                                         <div className="relative">
@@ -115,20 +144,57 @@ export default function MessagesPage() {
                                                     </Button>
                                                 </div>
                                             )}
+                                            {message.reaction && (
+                                                <div className="absolute -bottom-3 -right-3 rounded-full bg-background p-0.5 shadow-md">
+                                                    <span className="text-sm">{message.reaction}</span>
+                                                </div>
+                                            )}
                                         </div>
                                          <div className={cn("absolute bottom-1 opacity-0 transition-opacity group-hover:opacity-100", message.sender.id === currentUser?.id ? "left-0 -translate-x-full" : "right-0 translate-x-full")}>
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground">
+                                                        <Smile className="h-4 w-4" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-fit p-1">
+                                                    <div className="flex gap-1">
+                                                        {messageReactions.map(reaction => (
+                                                            <Button
+                                                            key={reaction}
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={cn("rounded-full text-lg hover:bg-accent", message.reaction === reaction && "bg-accent scale-110")}
+                                                            onClick={() => handleReaction(message.id, reaction)}
+                                                            >
+                                                            {reaction}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                </PopoverContent>
+                                             </Popover>
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" disabled={translatingMessageId === message.id}>
-                                                    {translatingMessageId === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground" disabled={translatingMessageId === message.id}>
+                                                        {translatingMessageId === message.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="start">
-                                                    {availableLanguages.map(lang => (
-                                                        <DropdownMenuItem key={lang} onClick={() => handleTranslate(message.id, message.content, lang)}>
-                                                            {lang}
-                                                        </DropdownMenuItem>
-                                                    ))}
+                                                    <DropdownMenuSub>
+                                                        <DropdownMenuSubTrigger>
+                                                            <Languages className="mr-2 h-4 w-4" />
+                                                            <span>Translate</span>
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuPortal>
+                                                            <DropdownMenuSubContent>
+                                                                {availableLanguages.map(lang => (
+                                                                    <DropdownMenuItem key={lang} onClick={() => handleTranslate(message.id, message.content, lang)}>
+                                                                        {lang}
+                                                                    </DropdownMenuItem>
+                                                                ))}
+                                                            </DropdownMenuSubContent>
+                                                        </DropdownMenuPortal>
+                                                    </DropdownMenuSub>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
