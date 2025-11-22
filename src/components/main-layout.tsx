@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -63,6 +63,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed', color: 'text-sky-500' },
     { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages', color: 'text-purple-500' },
     { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-emerald-500' },
+    { href: '/connect', icon: Zap, label: 'Connect', tooltip: 'Connect', color: 'text-yellow-500' },
   ];
 
   const getNotificationIcon = (type: Notification['type']) => {
