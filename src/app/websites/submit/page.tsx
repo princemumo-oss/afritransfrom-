@@ -15,12 +15,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, ArrowLeft } from 'lucide-react';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const initiativeSchema = z.object({
-  name: z.string().min(3, 'Initiative name must be at least 3 characters.'),
+  name: z.string().min(3, 'Website domain must be at least 3 characters.'),
   description: z.string().min(20, 'Description must be at least 20 characters.').max(200, 'Description cannot exceed 200 characters.'),
   logoUrl: z.string().url('Please upload a logo.'),
   paymentLinks: z.object({
@@ -93,7 +93,20 @@ export default function SubmitInitiativePage() {
     setIsSubmitting(true);
     
     try {
+      // Check for uniqueness of the website name (domain)
       const initiativesCollection = collection(firestore, 'initiatives');
+      const q = query(initiativesCollection, where("name", "==", data.name));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        form.setError("name", {
+          type: "manual",
+          message: "This website domain is already taken. Please choose another one.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       await addDocumentNonBlocking(initiativesCollection, {
         ...data,
         submittedBy: currentUser.uid,
@@ -146,7 +159,7 @@ export default function SubmitInitiativePage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website/Initiative Name</FormLabel>
+                      <FormLabel>Website Domain</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., Arise Africa Initiative" {...field} disabled={isSubmitting} />
                       </FormControl>
