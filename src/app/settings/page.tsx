@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { users } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Shield } from 'lucide-react';
+import { Shield, MessageCircle } from 'lucide-react';
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -36,6 +36,13 @@ export default function SettingsPage() {
         sensitiveContentFilter: false,
         locationSharing: true,
     });
+    const [messagingSettings, setMessagingSettings] = useState({
+        readReceipts: true,
+        typingIndicators: true,
+        messageReactions: true,
+        ephemeralMessages: 'off',
+        groupChatPermissions: 'everyone',
+    });
     
     const handleProfileSave = () => {
         toast({
@@ -49,6 +56,13 @@ export default function SettingsPage() {
         toast({
             title: 'Privacy Settings Saved',
             description: 'Your privacy preferences have been updated.',
+        });
+    };
+
+    const handleMessagingSave = () => {
+        toast({
+            title: 'Messaging Settings Saved',
+            description: 'Your messaging preferences have been updated.',
         });
     };
 
@@ -245,7 +259,93 @@ export default function SettingsPage() {
                         <Button onClick={handlePrivacySave}>Save Privacy Settings</Button>
                     </CardFooter>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <MessageCircle />
+                            Messaging &amp; Interaction
+                        </CardTitle>
+                        <CardDescription>Customize your direct messaging experience.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="read-receipts">Read receipts</Label>
+                                <p className="text-sm text-muted-foreground">Allow others to see when you have read their messages.</p>
+                            </div>
+                            <Switch 
+                                id="read-receipts"
+                                checked={messagingSettings.readReceipts}
+                                onCheckedChange={(checked) => setMessagingSettings(prev => ({...prev, readReceipts: checked}))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="typing-indicators">Typing indicators</Label>
+                                <p className="text-sm text-muted-foreground">Allow others to see when you are typing a message.</p>
+                            </div>
+                            <Switch 
+                                id="typing-indicators"
+                                checked={messagingSettings.typingIndicators}
+                                onCheckedChange={(checked) => setMessagingSettings(prev => ({...prev, typingIndicators: checked}))}
+                            />
+                        </div>
+                         <div className="flex items-center justify-between">
+                            <div>
+                                <Label htmlFor="message-reactions">Message reactions</Label>
+                                <p className="text-sm text-muted-foreground">Enable or disable emoji reactions on messages.</p>
+                            </div>
+                            <Switch 
+                                id="message-reactions"
+                                checked={messagingSettings.messageReactions}
+                                onCheckedChange={(checked) => setMessagingSettings(prev => ({...prev, messageReactions: checked}))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Ephemeral messages</Label>
+                                <p className="text-sm text-muted-foreground">Set messages to automatically delete after a certain time.</p>
+                            </div>
+                            <Select
+                                value={messagingSettings.ephemeralMessages}
+                                onValueChange={(value) => setMessagingSettings(prev => ({...prev, ephemeralMessages: value}))}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select duration" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="off">Off</SelectItem>
+                                    <SelectItem value="24h">24 hours</SelectItem>
+                                    <SelectItem value="7d">7 days</SelectItem>
+                                    <SelectItem value="30d">30 days</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Group chat permissions</Label>
+                                <p className="text-sm text-muted-foreground">Control who can add or remove members from group chats.</p>
+                            </div>
+                            <Select
+                                value={messagingSettings.groupChatPermissions}
+                                onValueChange={(value) => setMessagingSettings(prev => ({...prev, groupChatPermissions: value}))}
+                            >
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select permission" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="everyone">Everyone</SelectItem>
+                                    <SelectItem value="admins">Admins Only</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleMessagingSave}>Save Messaging Settings</Button>
+                    </CardFooter>
+                </Card>
             </div>
         </MainLayout>
     );
-}
+
+    
