@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SetMoodDialog } from '@/components/set-mood-dialog';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { QnaSection } from '@/components/qna-section';
 import { QrCodeDialog } from '@/components/qr-code-dialog';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -328,7 +328,7 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
                         )}
-                        {user.hobbies && user.h hobbies.length > 0 && (
+                        {user.hobbies && user.hobbies.length > 0 && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Hobbies</CardTitle>
