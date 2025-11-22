@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -98,6 +99,40 @@ export default function SettingsPage() {
                             <Switch id="likes" />
                         </div>
                     </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Privacy & Safety</CardTitle>
+                        <CardDescription>Control who can see your activity and content.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Profile Visibility</Label>
+                                <p className="text-sm text-muted-foreground">Control who can view your profile.</p>
+                            </div>
+                            <Select defaultValue="public">
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select visibility" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="public">Public</SelectItem>
+                                    <SelectItem value="friends">Friends Only</SelectItem>
+                                    <SelectItem value="private">Private</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Content Moderation</Label>
+                                <p className="text-sm text-muted-foreground">Filter sensitive content from your feed.</p>
+                            </div>
+                            <Switch id="content-filter" />
+                        </div>
+                    </CardContent>
+                     <CardFooter>
+                        <Button>Save Privacy Settings</Button>
+                    </CardFooter>
                 </Card>
             </div>
         </MainLayout>
