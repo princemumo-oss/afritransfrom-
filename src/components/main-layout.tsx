@@ -60,10 +60,23 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
   const navItems = [
-    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed' },
-    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages' },
-    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends' },
+    { href: '/', icon: Home, label: 'Feed', tooltip: 'Feed', color: 'text-sky-500' },
+    { href: '/messages', icon: MessageSquare, label: 'Messages', tooltip: 'Messages', color: 'text-purple-500' },
+    { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-emerald-500' },
   ];
+
+  const getNotificationIcon = (type: Notification['type']) => {
+    switch (type) {
+      case 'like':
+        return <Heart className="h-5 w-5 text-red-500" />;
+      case 'comment':
+        return <MessageSquare className="h-5 w-5 text-blue-500" />;
+      case 'friend_request':
+        return <UserPlus className="h-5 w-5 text-green-500" />;
+      default:
+        return <Bell className="h-5 w-5 text-gray-400" />;
+    }
+  }
 
   return (
     <div className="flex min-h-screen w-full">
@@ -96,7 +109,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild tooltip={item.tooltip} isActive={pathname === item.href}>
                   <Link href={item.href}>
-                    <item.icon />
+                    <item.icon className={cn(item.color)} />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -136,7 +149,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
-                  <Bell className="h-5 w-5" />
+                  <Bell className="h-5 w-5 text-yellow-500" />
                   {unreadNotifications > 0 && (
                     <span className="absolute right-0 top-0 flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
@@ -153,12 +166,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="flex flex-col">
-                      {notifications.map((notification, index) => (
+                      {notifications.map((notification) => (
                         <div key={notification.id} className={cn("flex items-start gap-3 p-4", !notification.read && "bg-accent/50")}>
-                          <Avatar className="h-8 w-8 border">
-                              <AvatarImage src={notification.user.avatarUrl} alt={notification.user.name} />
-                              <AvatarFallback>{notification.user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <div className='flex h-8 w-8 items-center justify-center rounded-full bg-background'>
+                             {getNotificationIcon(notification.type)}
+                          </div>
                           <div className="text-sm">
                               <p>
                                   <span className="font-semibold">{notification.user.name}</span>
@@ -184,7 +196,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
             <Button asChild variant="ghost" size="icon" className="rounded-full">
               <Link href="/settings">
-                <Settings className="h-5 w-5" />
+                <Settings className="h-5 w-5 text-gray-500" />
                 <span className="sr-only">Settings</span>
               </Link>
             </Button>

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Image as ImageIcon, Send, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Send, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   filterContentAndSuggestHashtags,
@@ -124,7 +124,7 @@ export default function CreatePost() {
 
             <div className="flex justify-between items-center mt-2">
               <Button variant="ghost" size="icon" onClick={handlePhotoUpload} disabled={isLoading || !!analysisResult}>
-                <ImageIcon className="h-5 w-5" />
+                <ImageIcon className="h-5 w-5 text-green-500" />
               </Button>
               {analysisResult ? (
                 <Button onClick={handlePublish}>
@@ -132,7 +132,11 @@ export default function CreatePost() {
                 </Button>
               ) : (
                 <Button onClick={handleAnalyzeAndPost} disabled={!content.trim() || isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4 text-yellow-300" />
+                  )}
                   {isLoading ? 'Analyzing...' : 'Post'}
                 </Button>
               )}
