@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -99,7 +100,7 @@ export default function ProfilePage() {
         <MainLayout>
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <Card className="overflow-hidden">
-                    <div className="h-48 bg-muted" style={{ backgroundImage: `url('https://picsum.photos/seed/${userId}/1200/300')`, backgroundSize: 'cover', backgroundPosition: 'center' }} data-ai-hint="profile banner"></div>
+                    <div className="h-48 bg-muted" style={{ backgroundImage: `url(${user.coverPhotoUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} data-ai-hint="profile banner"></div>
                     <CardContent className="relative -mt-16 p-6">
                         <div className="flex flex-col items-center sm:flex-row sm:items-end">
                             <div className="relative">
@@ -130,7 +131,10 @@ export default function ProfilePage() {
                                     <h1 className="text-3xl font-bold">{user.name}</h1>
                                     {user.verified && <CheckCircle className="h-6 w-6 text-primary" />}
                                 </div>
-                                <p className="text-muted-foreground">@{user.handle}</p>
+                                <div className="flex items-center justify-center gap-2 sm:justify-start">
+                                    <p className="text-muted-foreground">@{user.handle}</p>
+                                    {user.pronouns && <p className="text-sm text-muted-foreground">&bull; {user.pronouns}</p>}
+                                </div>
                                 <p className="mt-2 text-muted-foreground">{user.bio}</p>
                                  <div className="mt-4 flex justify-center gap-6 text-sm text-muted-foreground sm:justify-start">
                                     <div><span className="font-bold text-foreground">{userPosts.length}</span> Posts</div>

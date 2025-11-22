@@ -21,12 +21,14 @@ export type Question = {
 };
 
 export type User = {
-  id: string;
+  id:string;
   name: string;
   handle: string;
   verified?: boolean;
   avatarUrl: string;
+  coverPhotoUrl?: string;
   bio: string;
+  pronouns?: string;
   followers: number;
   following: number;
   onlineStatus?: 'online' | 'offline';
@@ -110,7 +112,9 @@ const usersData: Omit<User, 'questions'>[] = [
     handle: 'alice',
     verified: true,
     avatarUrl: imageMap.get('avatar-1')!.imageUrl,
+    coverPhotoUrl: `https://picsum.photos/seed/1/1200/300`,
     bio: 'Software Engineer and cat lover. 🐈 #DevLife',
+    pronouns: 'she/her',
     followers: 1500,
     following: 250,
     onlineStatus: 'online',
@@ -128,6 +132,7 @@ const usersData: Omit<User, 'questions'>[] = [
     name: 'Bob',
     handle: 'bob',
     avatarUrl: imageMap.get('avatar-2')!.imageUrl,
+    coverPhotoUrl: `https://picsum.photos/seed/2/1200/300`,
     bio: 'Designer, photographer, and coffee enthusiast. ☕',
     followers: 780,
     following: 500,
@@ -144,6 +149,7 @@ const usersData: Omit<User, 'questions'>[] = [
     name: 'Charlie',
     handle: 'charlie',
     avatarUrl: imageMap.get('avatar-3')!.imageUrl,
+    coverPhotoUrl: `https://picsum.photos/seed/3/1200/300`,
     bio: 'Just a dude who loves hiking. ⛰️',
     followers: 320,
     following: 180,
@@ -160,7 +166,9 @@ const usersData: Omit<User, 'questions'>[] = [
     name: 'Diana',
     handle: 'diana',
     avatarUrl: imageMap.get('avatar-4')!.imageUrl,
+    coverPhotoUrl: `https://picsum.photos/seed/4/1200/300`,
     bio: 'Exploring the world one city at a time. 🌍',
+    pronouns: 'she/they',
     followers: 2100,
     following: 50,
     onlineStatus: 'offline',
@@ -177,6 +185,7 @@ const usersData: Omit<User, 'questions'>[] = [
     name: 'You',
     handle: 'you',
     avatarUrl: imageMap.get('avatar-5')!.imageUrl,
+    coverPhotoUrl: `https://picsum.photos/seed/5/1200/300`,
     bio: 'This is your bio. You can edit it!',
     followers: 42,
     following: 84,

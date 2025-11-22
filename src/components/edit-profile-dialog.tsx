@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import React, { useRef } from 'react';
+import Image from 'next/image';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -33,15 +35,20 @@ import {
 } from '@/components/ui/select';
 import { type User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Trash } from 'lucide-react';
+import { Trash, Camera, CheckCircle, HelpCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   handle: z.string().min(3, 'Handle must be at least 3 characters.').regex(/^[a-zA-Z0-9_]+$/, 'Handle can only contain letters, numbers, and underscores.'),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
+  pronouns: z.string().optional(),
   location: z.string().optional(),
   website: z.string().url('Please enter a valid URL').or(z.literal('')).optional(),
+  avatarUrl: z.string().optional(),
+  coverPhotoUrl: z.string().optional(),
   work: z.object({
     company: z.string().optional(),
     position: z.string().optional(),
@@ -74,6 +81,9 @@ export function EditProfileDialog({
   onProfileUpdate,
 }: EditProfileDialogProps) {
   const { toast } = useToast();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -88,6 +98,18 @@ export function EditProfileDialog({
     control: form.control,
     name: "family",
   });
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: 'avatarUrl' | 'coverPhotoUrl') => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue(field, reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   function onSubmit(data: ProfileFormValues) {
     const updatedUser = { ...user, ...data };
@@ -98,10 +120,20 @@ export function EditProfileDialog({
     });
     onOpenChange(false);
   }
+  
+  const requestVerification = () => {
+    toast({
+      title: 'Verification Request Submitted',
+      description: 'Your request for a verified badge is under review.',
+    });
+  }
+
+  const avatarUrl = form.watch('avatarUrl');
+  const coverPhotoUrl = form.watch('coverPhotoUrl');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogDescription>
@@ -110,34 +142,83 @@ export function EditProfileDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+            <div className="space-y-4">
+                <FormLabel>Profile and Cover Photo</FormLabel>
+                <div className="relative h-36 rounded-lg bg-muted">
+                    {coverPhotoUrl && (
+                        <Image src={coverPhotoUrl} alt="Cover photo" layout="fill" objectFit="cover" className="rounded-lg" />
+                    )}
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="absolute top-2 right-2 rounded-full"
+                        onClick={() => coverInputRef.current?.click()}
+                    >
+                        <Camera className="h-4 w-4" />
+                    </Button>
+                    <input type="file" ref={coverInputRef} onChange={(e) => handleFileChange(e, 'coverPhotoUrl')} accept="image/*" className="hidden" />
+                </div>
+                <div className="relative -mt-16 ml-6 h-24 w-24">
+                    <Avatar className="h-24 w-24 border-4 border-background">
+                        <AvatarImage src={avatarUrl} alt={user.name} />
+                        <AvatarFallback className="text-3xl">{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                     <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                        onClick={() => avatarInputRef.current?.click()}
+                    >
+                        <Camera className="h-4 w-4" />
+                    </Button>
+                    <input type="file" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatarUrl')} accept="image/*" className="hidden" />
+                </div>
+            </div>
+
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                 <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Your name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
                 <FormField
-                control={form.control}
-                name="handle"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Handle</FormLabel>
-                    <FormControl>
-                        <Input placeholder="your_handle" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
+                    control={form.control}
+                    name="handle"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Handle</FormLabel>
+                        <FormControl>
+                            <Input placeholder="your_handle" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
             </div>
+            <FormField
+              control={form.control}
+              name="pronouns"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pronouns</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. she/her, they/them" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="bio"
@@ -323,6 +404,30 @@ export function EditProfileDialog({
                         Add Family Member
                     </Button>
                 </div>
+            </div>
+
+            <Separator />
+
+            <div>
+                <FormLabel>Verification</FormLabel>
+                {user.verified ? (
+                     <Alert variant="default" className="mt-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertTitle>You are verified!</AlertTitle>
+                        <AlertDescription>
+                            Your profile has a verified badge.
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <Alert variant="outline" className="mt-2">
+                        <HelpCircle className="h-4 w-4" />
+                        <AlertTitle>Request Verification</AlertTitle>
+                        <AlertDescription>
+                            Get a verified badge to show that your profile is authentic.
+                            <Button type="button" size="sm" className="mt-2" onClick={requestVerification}>Request Badge</Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
             </div>
 
             <DialogFooter>
