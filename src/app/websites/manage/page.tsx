@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,12 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, HardHat, PlusCircle, Trash2, Upload, Image as ImageIcon, Video } from 'lucide-react';
+import { Loader2, HardHat, PlusCircle, Trash2, Upload, Image as ImageIcon, Video, Hourglass, AlertCircle, CheckCircle, DollarSign } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
 import type { Initiative, InitiativeEvent, Product } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const eventSchema = z.object({
     title: z.string().min(1, "Title is required."),
@@ -33,21 +36,20 @@ const productSchema = z.object({
     purchaseUrl: z.string().url("A valid purchase link is required."),
 });
 
+// A placeholder for your actual PayPal payment link
+const PAYPAL_PAYMENT_LINK = "https://www.paypal.com/paypalme/your-business-name";
+
 export default function ManageWebsitesPage() {
     const { user: authUser } = useUser();
     const firestore = useFirestore();
-    const { toast } = useToast();
 
     const [selectedWebsiteId, setSelectedWebsiteId] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const userWebsitesQuery = useMemoFirebase(() =>
-        authUser ? query(collection(firestore, 'initiatives'), where('submittedBy', '==', authUser.uid), where('status', '==', 'approved')) : null
+        authUser ? query(collection(firestore, 'initiatives'), where('submittedBy', '==', authUser.uid)) : null
     , [firestore, authUser]);
 
     const { data: userWebsites, isLoading } = useCollection<Initiative>(userWebsitesQuery);
-
-    const selectedWebsite = userWebsites?.find(w => w.id === selectedWebsiteId);
     
     // Set initial selected website
     useEffect(() => {
@@ -56,60 +58,8 @@ export default function ManageWebsitesPage() {
         }
     }, [userWebsites, selectedWebsiteId]);
 
-    const handleFileUpload = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-             if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                reject('File is too large. Max 5MB.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                // In a real app, this would be an upload to Firebase Storage.
-                // Using a data URL is not scalable for production.
-                resolve(reader.result as string);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    };
-
-    const handleUpdate = async (field: string, data: any) => {
-        if (!selectedWebsiteId) return;
-        setIsSubmitting(true);
-        try {
-            const websiteRef = doc(firestore, 'initiatives', selectedWebsiteId);
-            await updateDocumentNonBlocking(websiteRef, { [field]: data });
-            toast({ title: 'Success!', description: `Website ${field} has been updated.` });
-        } catch (error) {
-            console.error(`Error updating ${field}:`, error);
-            toast({ variant: 'destructive', title: 'Error', description: `Failed to update ${field}.` });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
+    const selectedWebsite = userWebsites?.find(w => w.id === selectedWebsiteId);
     
-    const handleArrayUpdate = async (field: 'events.upcoming' | 'products', data: any, type: 'past' | 'upcoming' = 'upcoming') => {
-        if (!selectedWebsiteId) return;
-        setIsSubmitting(true);
-        
-        // This is a simplified way to add to nested objects.
-        // For production, you might want more robust logic, especially for 'events'.
-        const updateData = field === 'events.upcoming' 
-            ? { [`events.${type}`]: arrayUnion(data) }
-            : { [field]: arrayUnion(data) };
-
-        try {
-            const websiteRef = doc(firestore, 'initiatives', selectedWebsiteId);
-            await updateDocumentNonBlocking(websiteRef, updateData);
-            toast({ title: 'Success!', description: `${field.split('.')[0]} has been added.` });
-        } catch (error) {
-            console.error(`Error adding to ${field}:`, error);
-            toast({ variant: 'destructive', title: 'Error', description: `Failed to add item.` });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
     if (isLoading) {
         return <MainLayout><div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div></MainLayout>
     }
@@ -121,12 +71,15 @@ export default function ManageWebsitesPage() {
                      <Card className="flex flex-col items-center justify-center p-12 text-center">
                         <HardHat className="h-16 w-16 text-muted-foreground mb-4" />
                         <CardHeader>
-                            <CardTitle>No Approved Websites</CardTitle>
+                            <CardTitle>No Websites Submitted</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <CardDescription>
-                            You do not have any approved websites to manage. Once your submission is approved, it will appear here.
+                            You have not submitted any websites yet. Once you submit a website, you can manage it here after it's been reviewed.
                             </CardDescription>
+                             <Button asChild className="mt-4">
+                                <Link href="/websites/submit">Submit Your First Website</Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -155,19 +108,116 @@ export default function ManageWebsitesPage() {
                     </Select>
                 )}
 
-                {selectedWebsite && (
-                    <div className="space-y-6">
-                        {/* Edit Description */}
-                        <EditDescriptionCard website={selectedWebsite} onUpdate={handleUpdate} isSubmitting={isSubmitting} />
-                        {/* Add Event */}
-                        <AddEventCard onAdd={(data) => handleArrayUpdate('events.upcoming', data, 'upcoming')} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
-                        {/* Add Product */}
-                        <AddProductCard onAdd={(data) => handleArrayUpdate('products', data)} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
-                    </div>
-                )}
+                {selectedWebsite && <WebsiteDashboard website={selectedWebsite} />}
             </div>
         </MainLayout>
     );
+}
+
+function WebsiteDashboard({ website }: { website: Initiative }) {
+    const { toast } = useToast();
+    const firestore = useFirestore();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFileUpload = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+             if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                reject('File is too large. Max 5MB.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // In a real app, this would be an upload to Firebase Storage.
+                // Using a data URL is not scalable for production.
+                resolve(reader.result as string);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleUpdate = async (field: string, data: any) => {
+        setIsSubmitting(true);
+        try {
+            const websiteRef = doc(firestore, 'initiatives', website.id);
+            await updateDocumentNonBlocking(websiteRef, { [field]: data });
+            toast({ title: 'Success!', description: `Website ${field} has been updated.` });
+        } catch (error) {
+            console.error(`Error updating ${field}:`, error);
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to update ${field}.` });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    const handleArrayUpdate = async (field: 'events.upcoming' | 'products', data: any, type: 'past' | 'upcoming' = 'upcoming') => {
+        setIsSubmitting(true);
+        const updateData = field === 'events.upcoming' 
+            ? { [`events.${type}`]: arrayUnion(data) }
+            : { [field]: arrayUnion(data) };
+
+        try {
+            const websiteRef = doc(firestore, 'initiatives', website.id);
+            await updateDocumentNonBlocking(websiteRef, updateData);
+            toast({ title: 'Success!', description: `${field.split('.')[0]} has been added.` });
+        } catch (error) {
+            console.error(`Error adding to ${field}:`, error);
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to add item.` });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    switch (website.status) {
+        case 'approved':
+            return (
+                <div className="space-y-6">
+                    <EditDescriptionCard website={website} onUpdate={handleUpdate} isSubmitting={isSubmitting} />
+                    <AddEventCard onAdd={(data) => handleArrayUpdate('events.upcoming', data, 'upcoming')} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
+                    <AddProductCard onAdd={(data) => handleArrayUpdate('products', data)} isSubmitting={isSubmitting} handleFileUpload={handleFileUpload} />
+                </div>
+            );
+        case 'pending_payment':
+            return (
+                 <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertTitle className='font-bold'>Congratulations! Your Website is Approved!</AlertTitle>
+                    <AlertDescription>
+                        Your website, **{website.name}**, has been approved by our team. The final step is to complete the one-time registration and hosting fee of **$30**.
+                        <br /><br />
+                        Click the button below to complete your payment via PayPal. Your website will be published automatically once the payment is confirmed.
+                    </AlertDescription>
+                     <div className='mt-4'>
+                        <Button asChild>
+                            <a href={PAYPAL_PAYMENT_LINK} target="_blank" rel="noopener noreferrer">
+                               <DollarSign className='mr-2 h-4 w-4' /> Proceed to Payment ($30)
+                            </a>
+                        </Button>
+                    </div>
+                </Alert>
+            );
+         case 'rejected':
+            return (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Submission Update</AlertTitle>
+                    <AlertDescription>
+                        Thank you for your submission. After careful review, your website, **{website.name}**, was not approved at this time.
+                    </AlertDescription>
+                </Alert>
+            );
+        case 'pending':
+        default:
+            return (
+                <Alert>
+                    <Hourglass className="h-4 w-4" />
+                    <AlertTitle>Your Submission is Under Review</AlertTitle>
+                    <AlertDescription>
+                        Your website, **{website.name}**, is currently being reviewed by our team. This process can take up to 24 hours. You will be notified once the review is complete.
+                    </AlertDescription>
+                </Alert>
+            );
+    }
 }
 
 // Sub-component for editing the description
@@ -301,4 +351,5 @@ function AddProductCard({ onAdd, isSubmitting, handleFileUpload }: { onAdd: (dat
         </Card>
     );
 }
+
     
