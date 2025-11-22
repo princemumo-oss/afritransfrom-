@@ -11,7 +11,7 @@ const exploreImages = PlaceHolderImages.filter(img => img.id.startsWith('post-')
 export default function ExplorePage() {
   return (
     <MainLayout>
-      <div className="mx-auto grid w-full max-w-6xl gap-6">
+      <div className="mx-auto grid w-full max-w-7xl gap-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Explore</h1>
           <p className="text-muted-foreground">
@@ -31,23 +31,24 @@ export default function ExplorePage() {
           </div>
           {categories.map((category) => (
             <TabsContent key={category} value={category}>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="columns-2 gap-4 sm:columns-3 md:columns-4 lg:columns-5">
                 {exploreImages
                   // Shuffle images for each category to make it look different
                   .sort(() => 0.5 - Math.random())
                   .map((item, index) => (
-                    <Card
+                    <div
                       key={`${category}-${index}`}
-                      className="group relative aspect-square overflow-hidden"
+                      className="group relative mb-4 break-inside-avoid"
                     >
                       <Image
                         src={item.imageUrl}
                         alt={item.description}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        width={500}
+                        height={item.height}
+                        className="w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
                         data-ai-hint={item.imageHint}
                       />
-                    </Card>
+                    </div>
                   ))}
               </div>
             </TabsContent>
