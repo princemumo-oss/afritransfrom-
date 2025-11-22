@@ -38,6 +38,7 @@ import { Separator } from './ui/separator';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  handle: z.string().min(3, 'Handle must be at least 3 characters.').regex(/^[a-zA-Z0-9_]+$/, 'Handle can only contain letters, numbers, and underscores.'),
   bio: z.string().max(160, 'Bio must be 160 characters or less').optional(),
   location: z.string().optional(),
   website: z.string().url('Please enter a valid URL').or(z.literal('')).optional(),
@@ -108,19 +109,34 @@ export function EditProfileDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="handle"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Handle</FormLabel>
+                    <FormControl>
+                        <Input placeholder="your_handle" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
             <FormField
               control={form.control}
               name="bio"

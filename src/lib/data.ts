@@ -8,8 +8,15 @@ const imageMap = new Map<string, ImagePlaceholder>(
 export type User = {
   id: string;
   name: string;
+  handle: string;
+  verified?: boolean;
   avatarUrl: string;
   bio: string;
+  mood?: {
+    emoji: string;
+    text: string;
+    expiresAt: number;
+  };
   location?: string;
   work?: {
     company: string;
@@ -71,8 +78,10 @@ export const users: User[] = [
   { 
     id: '1', 
     name: 'Alice', 
+    handle: 'alice',
+    verified: true,
     avatarUrl: imageMap.get('avatar-1')!.imageUrl, 
-    bio: 'Software Engineer and cat lover.',
+    bio: 'Software Engineer and cat lover. 🐈 #DevLife',
     location: 'Nairobi, Kenya',
     work: { company: 'TechNova', position: 'Senior Developer' },
     education: { school: 'University of Cape Town', degree: 'Computer Science' },
@@ -84,8 +93,9 @@ export const users: User[] = [
   { 
     id: '2', 
     name: 'Bob', 
+    handle: 'bob',
     avatarUrl: imageMap.get('avatar-2')!.imageUrl, 
-    bio: 'Designer, photographer, and coffee enthusiast.',
+    bio: 'Designer, photographer, and coffee enthusiast. ☕',
     location: 'Lagos, Nigeria',
     work: { company: 'Creative Minds', position: 'Lead Designer' },
     education: { school: 'Yaba College of Technology', degree: 'Graphic Design' },
@@ -95,8 +105,9 @@ export const users: User[] = [
   { 
     id: '3', 
     name: 'Charlie', 
+    handle: 'charlie',
     avatarUrl: imageMap.get('avatar-3')!.imageUrl, 
-    bio: 'Just a dude who loves hiking.',
+    bio: 'Just a dude who loves hiking. ⛰️',
     location: 'Cape Town, South Africa',
     work: { company: 'Adventure Co.', position: 'Tour Guide' },
     education: { school: 'Stellenbosch University', degree: 'Environmental Science' },
@@ -106,8 +117,9 @@ export const users: User[] = [
   { 
     id: '4', 
     name: 'Diana', 
+    handle: 'diana',
     avatarUrl: imageMap.get('avatar-4')!.imageUrl, 
-    bio: 'Exploring the world one city at a time.',
+    bio: 'Exploring the world one city at a time. 🌍',
     location: 'Accra, Ghana',
     work: { company: 'Globe Trotters', position: 'Travel Blogger' },
     education: { school: 'University of Ghana', degree: 'Journalism' },
@@ -118,6 +130,7 @@ export const users: User[] = [
   { 
     id: '5', 
     name: 'You', 
+    handle: 'you',
     avatarUrl: imageMap.get('avatar-5')!.imageUrl, 
     bio: 'This is your bio. You can edit it!',
     location: 'Cairo, Egypt',

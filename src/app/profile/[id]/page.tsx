@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { MainLayout } from '@/components/main-layout';
 import PostCard from '@/components/post-card';
@@ -9,10 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { users as initialUsers, posts as allPosts, type User } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus } from 'lucide-react';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
+import { SetMoodDialog } from '@/components/set-mood-dialog';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -28,8 +31,12 @@ export default function ProfilePage() {
     const params = useParams<{ id: string }>();
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
 
-    const userId = params.id === 'me' ? users.find(u => u.name === 'You')?.id : params.id;
+    // This is a workaround for a Next.js bug with dynamic routes in App Router.
+    const id = use(Promise.resolve(params.id));
+
+    const userId = id === 'me' ? users.find(u => u.name === 'You')?.id : id;
     const user = users.find(u => u.id === userId);
     const userPosts = allPosts.filter(p => p.author.id === userId);
     const userFriends = users.filter(u => u.id !== userId && u.id !== '5'); // Exclude current user and 'You'
@@ -38,9 +45,26 @@ export default function ProfilePage() {
         setUsers(currentUsers => currentUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
     };
 
+    const handleMoodUpdate = (mood: User['mood']) => {
+        if(user) {
+            handleProfileUpdate({ ...user, mood });
+        }
+    }
+
+    // Effect to clear expired moods
+    useEffect(() => {
+        if (user?.mood && user.mood.expiresAt < Date.now()) {
+            handleMoodUpdate(undefined);
+        }
+    }, [user]);
+    
     if (!user) {
         return <MainLayout><div>User not found</div></MainLayout>;
     }
+    
+    const isCurrentUserProfile = id === 'me';
+    const moodExpired = user.mood && user.mood.expiresAt < Date.now();
+
 
     return (
         <MainLayout>
@@ -48,17 +72,40 @@ export default function ProfilePage() {
                 <Card className="overflow-hidden">
                     <div className="h-48 bg-muted" style={{ backgroundImage: `url('https://picsum.photos/seed/${userId}/1200/300')`, backgroundSize: 'cover', backgroundPosition: 'center' }} data-ai-hint="profile banner"></div>
                     <CardContent className="relative -mt-16 flex flex-col items-center p-6 text-center sm:flex-row sm:items-end sm:text-left">
-                        <Avatar className="h-32 w-32 border-4 border-background">
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                            <AvatarFallback className="text-5xl">{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                            <Avatar className="h-32 w-32 border-4 border-background">
+                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                <AvatarFallback className="text-5xl">{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            {user.mood && !moodExpired && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                             <div className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-background bg-card text-2xl">
+                                                {user.mood.emoji}
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{user.mood.text}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
                         <div className="mt-4 flex-1 sm:ml-6">
-                            <h1 className="text-3xl font-bold">{user.name}</h1>
-                            <p className="mt-1 text-muted-foreground">{user.bio}</p>
+                            <div className="flex items-center justify-center gap-2 sm:justify-start">
+                                <h1 className="text-3xl font-bold">{user.name}</h1>
+                                {user.verified && <CheckCircle className="h-6 w-6 text-primary" />}
+                            </div>
+                            <p className="text-muted-foreground">@{user.handle}</p>
+                            <p className="mt-2 text-muted-foreground">{user.bio}</p>
                         </div>
                         <div className="mt-4 flex gap-2 sm:mt-0">
-                            {params.id === 'me' ? (
+                            {isCurrentUserProfile ? (
                                 <>
+                                    <Button onClick={() => setIsMoodDialogOpen(true)}>
+                                        <Smile className="mr-2 h-4 w-4" /> Set Mood
+                                    </Button>
                                     <Button onClick={() => setIsEditDialogOpen(true)}>
                                         <Pen className="mr-2 h-4 w-4" /> Edit Profile
                                     </Button>
@@ -68,13 +115,21 @@ export default function ProfilePage() {
                                         onOpenChange={setIsEditDialogOpen}
                                         onProfileUpdate={handleProfileUpdate}
                                     />
+                                     <SetMoodDialog
+                                        user={user}
+                                        open={isMoodDialogOpen}
+                                        onOpenChange={setIsMoodDialogOpen}
+                                        onMoodUpdate={handleMoodUpdate}
+                                    />
                                 </>
                             ) : (
+                                <>
                                 <Button>
                                     <UserPlus className="mr-2 h-4 w-4" /> Add Friend
                                 </Button>
+                                <Button variant="outline">Message</Button>
+                                </>
                             )}
-                            <Button variant="outline">Message</Button>
                         </div>
                     </CardContent>
                 </Card>
