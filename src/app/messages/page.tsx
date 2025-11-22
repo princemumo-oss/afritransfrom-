@@ -205,8 +205,7 @@ export default function MessagesPage() {
     const handleTranslate = async (messageId: string, content: string, language: string) => {
         setTranslatingMessageId(messageId);
         try {
-          const targetLanguage = language === 'Español' ? 'Spanish' : language;
-          const result = await translateText({ text: content, targetLanguage });
+          const result = await translateText({ text: content, targetLanguage: language });
           setTranslatedMessages(prev => ({...prev, [messageId]: result.translatedText}));
         } catch (error) {
           console.error('Translation error:', error);
@@ -352,6 +351,7 @@ export default function MessagesPage() {
     };
 
     const filteredConversations = conversations.filter(convo => {
+        if (!convo.participant) return false;
         const participantName = `${convo.participant.firstName} ${convo.participant.lastName}`.toLowerCase();
         return participantName.includes(searchTerm.toLowerCase());
     });
@@ -459,10 +459,10 @@ export default function MessagesPage() {
                         {!isInCall && (
                              <div className="flex items-center gap-2">
                                 <Button variant="ghost" size="icon" onClick={() => handleStartCall('audio')}>
-                                    <Phone className="h-5 w-5" />
+                                    <Phone className="h-5 w-5 text-green-500" />
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleStartCall('video')}>
-                                    <Video className="h-5 w-5" />
+                                    <Video className="h-5 w-5 text-blue-500" />
                                 </Button>
                              </div>
                         )}
@@ -679,3 +679,6 @@ export default function MessagesPage() {
     
 
 
+
+
+    
