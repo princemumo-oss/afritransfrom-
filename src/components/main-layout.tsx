@@ -3,8 +3,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat } from 'lucide-react';
-import React from 'react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useAuth, useUser } from '@/firebase';
 
 import {
   Sidebar,
@@ -16,6 +17,8 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  useSidebar,
+  SidebarProvider,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -28,19 +31,34 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { QrScannerDialog } from './qr-scanner-dialog';
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const currentUser = users.find(u => u.name === 'You');
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const currentUserData = users.find(u => u.name === 'You'); // Mock data
 
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const { toast } = useToast();
+  const { setOpenMobile } = useSidebar();
 
-  React.useEffect(() => {
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [isUserLoading, user, router]);
+
+  useEffect(() => {
     // In a real app, you'd fetch this from an API
     import('@/lib/data').then(data => setNotifications(data.notifications));
   }, []);
+  
+  // Close mobile sidebar on navigation
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -57,6 +75,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         title: 'Notifications updated',
         description: 'All notifications have been marked as read.',
     });
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+    router.push('/login'); // Redirect to login page after sign out
   };
 
   const unreadNotifications = notifications.filter(n => !n.read).length;
@@ -85,9 +109,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleScanSuccess = (result: string) => {
-    // Assuming the QR code contains a URL to the profile
     setIsScannerOpen(false);
-    // basic validation
     if (result.startsWith(window.location.origin) && result.includes('/profile/')) {
         router.push(result);
         toast({
@@ -102,6 +124,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         });
     }
   };
+
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex min-h-screen items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full">
@@ -163,12 +193,18 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile" isActive={pathname.startsWith('/profile')}>
                     <Link href="/profile/me">
-                        {currentUser && <Avatar className="h-7 w-7">
-                            <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                        {currentUserData && <Avatar className="h-7 w-7">
+                            <AvatarImage src={currentUserData.avatarUrl} alt={currentUserData.name} />
+                            <AvatarFallback>{currentUserData.name.charAt(0)}</AvatarFallback>
                         </Avatar>}
-                        <span className="truncate">{currentUser?.name ?? 'Profile'}</span>
+                        <span className="truncate">{user.displayName || 'Profile'}</span>
                     </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} tooltip="Log Out">
+                    <LogOut />
+                    <span>Log Out</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
            </SidebarMenu>
@@ -259,5 +295,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </SidebarInset>
       </div>
     </div>
+  );
+}
+
+
+export function MainLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <MainLayoutContent>{children}</MainLayoutContent>
+    </SidebarProvider>
   );
 }
