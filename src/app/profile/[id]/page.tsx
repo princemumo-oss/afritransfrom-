@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { users as initialUsers, posts as allPosts, type User, type Badge as BadgeType, badges as allBadges, type Question } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle } from 'lucide-react';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
@@ -18,6 +18,7 @@ import { SetMoodDialog } from '@/components/set-mood-dialog';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { QnaSection } from '@/components/qna-section';
+import { QrCodeDialog } from '@/components/qr-code-dialog';
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -40,6 +41,7 @@ export default function ProfilePage() {
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
+    const [isQrCodeOpen, setIsQrCodeOpen] = useState(false);
 
     // This is a workaround for a Next.js bug with dynamic routes in App Router.
     const id = params.id;
@@ -140,6 +142,10 @@ export default function ProfilePage() {
                             <div className="mt-4 flex shrink-0 gap-2 sm:mt-0">
                                 {isCurrentUserProfile ? (
                                     <>
+                                        <Button variant="outline" size="icon" onClick={() => setIsQrCodeOpen(true)}>
+                                            <QrCode className="h-4 w-4" />
+                                            <span className="sr-only">My QR Code</span>
+                                        </Button>
                                         <Button onClick={() => setIsMoodDialogOpen(true)}>
                                             <Smile className="mr-2 h-4 w-4" /> Set Mood
                                         </Button>
@@ -157,6 +163,11 @@ export default function ProfilePage() {
                                             open={isMoodDialogOpen}
                                             onOpenChange={setIsMoodDialogOpen}
                                             onMoodUpdate={handleMoodUpdate}
+                                        />
+                                        <QrCodeDialog
+                                            user={user}
+                                            open={isQrCodeOpen}
+                                            onOpenChange={setIsQrCodeOpen}
                                         />
                                     </>
                                 ) : (
@@ -197,7 +208,7 @@ export default function ProfilePage() {
                                     <CardTitle className="flex items-center gap-2">
                                         <Award className="text-yellow-500" />
                                         Badges
-                                    </CardTitle>
+                                    </Title>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {user.badges.map(badge => {

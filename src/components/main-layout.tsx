@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -27,6 +27,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { QrScannerDialog } from './qr-scanner-dialog';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const currentUser = users.find(u => u.name === 'You');
 
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -79,6 +81,25 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         return <Bell className="h-5 w-5 text-gray-400" />;
     }
   }
+
+  const handleScanSuccess = (result: string) => {
+    // Assuming the QR code contains a URL to the profile
+    setIsScannerOpen(false);
+    // basic validation
+    if (result.startsWith('http') || result.startsWith('/')) {
+        router.push(result);
+        toast({
+            title: 'QR Code Scanned!',
+            description: 'Navigating to user profile...',
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid QR Code',
+            description: 'The scanned QR code does not contain a valid URL.',
+        });
+    }
+  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -148,6 +169,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             />
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsScannerOpen(true)}>
+                <QrCode className="h-5 w-5" />
+                <span className="sr-only">Scan QR Code</span>
+            </Button>
+            <QrScannerDialog
+                open={isScannerOpen}
+                onOpenChange={setIsScannerOpen}
+                onScan={handleScanSuccess}
+            />
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
