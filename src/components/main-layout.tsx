@@ -1,10 +1,8 @@
-
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2 } from 'lucide-react';
+import { Home, MessageSquare, Users, Settings, Bell, Search, UserPlus, Heart, Zap, QrCode, Sparkles, Compass, Clapperboard, Bot, HardHat, LogOut, Loader2, Globe } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import type { User } from '@/lib/data';
@@ -99,6 +97,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: '/chatbot', icon: Bot, label: 'Chatbot', tooltip: 'Chatbot', color: 'text-indigo-500' },
     { href: '/friends', icon: Users, label: 'Friends', tooltip: 'Friends', color: 'text-pink-500' },
     { href: '/ai', icon: Sparkles, label: 'AI Tools', tooltip: 'AI Tools', color: 'text-teal-500' },
+    { href: '/showcase', icon: Globe, label: 'Showcase', tooltip: 'Showcase', color: 'text-rose-500' },
   ];
 
   const getNotificationIcon = (type: Notification['type']) => {
