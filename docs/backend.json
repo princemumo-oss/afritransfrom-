@@ -1,0 +1,345 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "profilePicture": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography or description of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Post": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Post",
+      "type": "object",
+      "description": "Represents a post created by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the post."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Post)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the post."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image associated with the post (if any).",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the post was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the post was last updated.",
+          "format": "date-time"
+        },
+        "likeIds": {
+          "type": "array",
+          "description": "References to Likes. (Relationship: Post 1:N Like)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "content",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FriendRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FriendRequest",
+      "type": "object",
+      "description": "Represents a friend request between two users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the friend request."
+        },
+        "requesterId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N FriendRequest, the user sending the request)"
+        },
+        "receiverId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N FriendRequest, the user receiving the request)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the friend request (e.g., 'pending', 'accepted', 'rejected')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the friend request was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the friend request was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "requesterId",
+        "receiverId",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DirectMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DirectMessage",
+      "type": "object",
+      "description": "Represents a direct message between two users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the direct message."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N DirectMessage, the user sending the message)"
+        },
+        "receiverId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N DirectMessage, the user receiving the message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "receiverId",
+        "content",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Like": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Like",
+      "type": "object",
+      "description": "Represents a like on a post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the like."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Like, the user who liked the post)"
+        },
+        "postId": {
+          "type": "string",
+          "description": "Reference to Post. (Relationship: Post 1:N Like, the post that was liked)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the like was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the like was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "postId",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Uses path-based ownership, ensuring only the user can modify their profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Stores posts created by a user.  Uses path-based ownership for simplicity. Posts are also copied to the `global_posts` collection for the main feed.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "postId",
+              "description": "The unique identifier for the post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/global_posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Stores a denormalized list of all posts for the main feed. Includes `authorId` to enable querying and authorization. Duplicates data from `users/{userId}/posts/{postId}`.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier for the post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/friend_requests/{friendRequestId}",
+        "definition": {
+          "entityName": "FriendRequest",
+          "schema": {
+            "$ref": "#/backend/entities/FriendRequest"
+          },
+          "description": "Stores friend requests between users.  Security rules can validate that `requesterId` and `receiverId` are valid user IDs.",
+          "params": [
+            {
+              "name": "friendRequestId",
+              "description": "The unique identifier for the friend request."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chats/{chatId}/messages/{messageId}",
+        "definition": {
+          "entityName": "DirectMessage",
+          "schema": {
+            "$ref": "#/backend/entities/DirectMessage"
+          },
+          "description": "Stores direct messages between users. The `members` map is denormalized to enable authorization independence. Each chat includes metadata of participants. The members list of the chat stores user ID's of the users participating.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "chatId",
+              "description": "The unique identifier for the chat."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/likes/{likeId}",
+        "definition": {
+          "entityName": "Like",
+          "schema": {
+            "$ref": "#/backend/entities/Like"
+          },
+          "description": "Stores likes for posts. Security rules can validate that `userId` and `postId` are valid references.",
+          "params": [
+            {
+              "name": "likeId",
+              "description": "The unique identifier for the like."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to model a social networking application, 'LinkUp,' focusing on user profiles, posts, friend connections, and direct messaging. Key considerations include authorization independence, clarity of intent, and scalable security rules. The structure adheres to the principles of Authorization Independence, Structural Segregation, and explicit Access Modeling. User profiles are stored in a dedicated collection (`users/{userId}`) using path-based ownership. Posts are stored in a subcollection under each user (`users/{userId}/posts/{postId}`) to maintain ownership integrity and simplify security rules, enabling atomic operations. To display all posts in a feed, we introduce a `global_posts` collection that denormalizes the post data and includes a `authorId` field for indexing and querying. Friend requests are managed via a dedicated collection (`friend_requests`) to facilitate efficient querying. Direct messages are structured under `users/{userId}/chats/{chatId}/messages/{messageId}` and leverages a `members` field to define user participation in the chat for authorization independence. \n\nAuthorization Independence (CRITICAL): Achieved through denormalization. For instance, the `global_posts` collection duplicates the data from the user-specific `posts` subcollection, including `authorId`, allowing for feed generation without needing to `get()` user-specific data. The `chats` subcollection under each user includes denormalized member data (`members` map), eliminating the need to fetch user profiles for authorization.\n\nQAPs (Rules are not Filters): Structural Segregation ensures that each collection has a homogeneous security posture. For example, user profiles are kept separate from posts, and direct messages are partitioned by user and chat ID, ensuring clean and efficient security rules. For `list` operations for displaying feeds (posts), the design uses a dedicated `global_posts` collection that denormalizes necessary authorization data."
+  }
+}
