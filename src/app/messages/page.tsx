@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState } from 'react';
 import { MainLayout } from '@/components/main-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -5,11 +9,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { conversations, users } from '@/lib/data';
-import { Send, Smile } from 'lucide-react';
+import { Send, Smile, Languages, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { translateText } from '@/ai/flows/translate-text';
+
+const availableLanguages = ['Español', 'French', 'German', 'Japanese', 'Mandarin', 'Swahili'];
 
 export default function MessagesPage() {
     const currentUser = users.find(u => u.name === 'You');
     const selectedConversation = conversations[0]; // mock selected conversation
+
+    const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
+    const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    const handleTranslate = async (messageId: string, content: string, language: string) => {
+        setTranslatingMessageId(messageId);
+        try {
+          const targetLanguage = language === 'Español' ? 'Spanish' : language;
+          const result = await translateText({ text: content, targetLanguage });
+          setTranslatedMessages(prev => ({...prev, [messageId]: result.translatedText}));
+        } catch (error) {
+          console.error('Translation error:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Translation Failed',
+            description: 'Could not translate the message at this time.',
+          });
+        } finally {
+          setTranslatingMessageId(null);
+        }
+      };
 
     return (
         <MainLayout>
@@ -65,7 +96,7 @@ export default function MessagesPage() {
                     <CardContent className="flex-1 overflow-y-auto p-4">
                         <div className="space-y-4">
                             {selectedConversation.messages.map(message => (
-                                <div key={message.id} className={`flex items-end gap-2 ${message.sender.id === currentUser?.id ? 'justify-end' : ''}`}>
+                                <div key={message.id} className={`group relative flex items-end gap-2 ${message.sender.id === currentUser?.id ? 'justify-end' : ''}`}>
                                     {message.sender.id !== currentUser?.id && (
                                         <Avatar className="h-8 w-8">
                                             <AvatarImage src={message.sender.avatarUrl} alt={message.sender.name} />
@@ -74,6 +105,30 @@ export default function MessagesPage() {
                                     )}
                                     <div className={`max-w-xs rounded-lg p-3 lg:max-w-md ${message.sender.id === currentUser?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                                         <p>{message.content}</p>
+                                        {translatedMessages[message.id] && (
+                                             <div className="mt-2 border-t pt-2">
+                                                <p className="whitespace-pre-wrap text-sm italic">{translatedMessages[message.id]}</p>
+                                                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setTranslatedMessages(p => ({...p, [message.id]: ''}))}>
+                                                    Show original
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="absolute bottom-0 opacity-0 transition-opacity group-hover:opacity-100">
+                                         <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className={`h-6 w-6 text-muted-foreground ${message.sender.id === currentUser?.id ? '-translate-x-full' : 'translate-x-full'}`} disabled={translatingMessageId === message.id}>
+                                                {translatingMessageId === message.id ? <Loader2 className="animate-spin" /> : <Languages className="h-4 w-4" />}
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start">
+                                                {availableLanguages.map(lang => (
+                                                    <DropdownMenuItem key={lang} onClick={() => handleTranslate(message.id, message.content, lang)}>
+                                                        {lang}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             ))}
