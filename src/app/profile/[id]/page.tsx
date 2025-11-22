@@ -11,17 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { type User, type Question, type Badge as BadgeType } from '@/lib/data';
-import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode } from 'lucide-react';
+import { Briefcase, GraduationCap, Heart, Home, Link as LinkIcon, Pen, UserPlus, CheckCircle, Smile, Rocket, Feather, Users, Award, HelpCircle, QrCode, UserCheck, UserX, Hourglass } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { SetMoodDialog } from '@/components/set-mood-dialog';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { QnaSection } from '@/components/qna-section';
 import { QrCodeDialog } from '@/components/qr-code-dialog';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, getDoc, onSnapshot } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, getDoc, onSnapshot, serverTimestamp, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 function InfoItem({ icon: Icon, text }: { icon: React.ElementType, text: string | undefined }) {
     if (!text) return null;
@@ -44,6 +46,7 @@ export default function ProfilePage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
     const [isQrCodeOpen, setIsQrCodeOpen] = useState(false);
+    const { toast } = useToast();
 
     const firestore = useFirestore();
     const { user: authUser } = useUser();
@@ -60,12 +63,43 @@ export default function ProfilePage() {
     const { data: userPosts, isLoading: arePostsLoading } = useCollection(userPostsQuery);
 
     const [userFriends, setUserFriends] = useState<User[]>([]);
+    const [friendStatus, setFriendStatus] = useState<'friends' | 'pending_them' | 'pending_me' | 'not_friends'>('not_friends');
+
+
+     useEffect(() => {
+        if (!user || !authUser || isCurrentUserProfile) return;
+
+        // Check if they are friends
+        if (user.friends?.includes(authUser.uid)) {
+            setFriendStatus('friends');
+            return;
+        }
+
+        // Check for pending friend requests
+        const friendRequestsRef = collection(firestore, 'friend_requests');
+        
+        // Check if I sent a request to them
+        const q1 = query(friendRequestsRef, where('requesterId', '==', authUser.uid), where('receiverId', '==', user.id), where('status', '==', 'pending'));
+        getDocs(q1).then(snap => {
+            if (!snap.empty) setFriendStatus('pending_them');
+        });
+
+        // Check if they sent a request to me
+        const q2 = query(friendRequestsRef, where('requesterId', '==', user.id), where('receiverId', '==', authUser.uid), where('status', '==', 'pending'));
+        getDocs(q2).then(snap => {
+            if (!snap.empty) setFriendStatus('pending_me');
+        });
+
+    }, [user, authUser, firestore, isCurrentUserProfile]);
 
     useEffect(() => {
-        if (!user || !user.friends) return;
+        if (!user || !user.friends || user.friends.length === 0) {
+            setUserFriends([]);
+            return;
+        };
         const friendPromises = user.friends.map(friendId => getDoc(doc(firestore, 'users', friendId)));
         Promise.all(friendPromises).then(friendDocs => {
-            const friendData = friendDocs.map(doc => doc.data() as User);
+            const friendData = friendDocs.filter(doc => doc.exists()).map(doc => doc.data() as User);
             setUserFriends(friendData);
         });
     }, [user, firestore]);
@@ -97,6 +131,48 @@ export default function ProfilePage() {
         const updatedQuestions = user.questions?.map(q => q.id === questionId ? {...q, answerText} : q);
         handleProfileUpdate({ questions: updatedQuestions });
     }
+
+    const handleAddFriend = () => {
+        if (!authUser || !user) return;
+        
+        const friendRequest = {
+            requesterId: authUser.uid,
+            receiverId: user.id,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        addDocumentNonBlocking(collection(firestore, 'friend_requests'), friendRequest);
+        setFriendStatus('pending_them');
+        toast({ title: 'Friend request sent!' });
+    };
+
+    const handleCancelFriendRequest = async () => {
+        if (!authUser || !user) return;
+        const friendRequestsRef = collection(firestore, 'friend_requests');
+        const q = query(friendRequestsRef, where('requesterId', '==', authUser.uid), where('receiverId', '==', user.id), where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            deleteDoc(doc.ref);
+        });
+        setFriendStatus('not_friends');
+        toast({ title: 'Friend request canceled.' });
+    };
+
+    const FriendStatusButton = () => {
+        switch (friendStatus) {
+            case 'friends':
+                return <Button variant="secondary"><UserCheck className="mr-2 h-4 w-4" /> Friends</Button>;
+            case 'pending_them':
+                return <Button variant="secondary" onClick={handleCancelFriendRequest}><Hourglass className="mr-2 h-4 w-4" /> Request Sent</Button>;
+            case 'pending_me':
+                // This case should be handled on the /friends page, but we can show a state
+                return <Button variant="secondary"><UserPlus className="mr-2 h-4 w-4" /> Respond to Request</Button>;
+            default:
+                return <Button onClick={handleAddFriend}><UserPlus className="mr-2 h-4 w-4" /> Add Friend</Button>;
+        }
+    };
 
     // Effect to clear expired moods
     useEffect(() => {
@@ -194,9 +270,7 @@ export default function ProfilePage() {
                                     </>
                                 ) : (
                                     <>
-                                    <Button>
-                                        <UserPlus className="mr-2 h-4 w-4" /> Add Friend
-                                    </Button>
+                                    <FriendStatusButton />
                                     <Button variant="outline">Message</Button>
                                     </>
                                 )}
@@ -254,7 +328,7 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
                         )}
-                        {user.hobbies && user.hobbies.length > 0 && (
+                        {user.hobbies && user.h hobbies.length > 0 && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Hobbies</CardTitle>

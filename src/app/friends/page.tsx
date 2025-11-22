@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, getDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, doc, getDoc, updateDoc, deleteDoc, onSnapshot, arrayUnion } from 'firebase/firestore';
 import { Check, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import { addFriend } from '@/app/friends/actions';
 
 export default function FriendsPage() {
     const firestore = useFirestore();
@@ -53,6 +54,10 @@ export default function FriendsPage() {
         const unsub = onSnapshot(currentUserProfileQuery, async (snap) => {
             const userData = snap.data();
             if (userData && userData.friends) {
+                if (userData.friends.length === 0) {
+                    setFriends([]);
+                    return;
+                }
                 const friendPromises = userData.friends.map((friendId: string) => getDoc(doc(firestore, 'users', friendId)));
                 const friendDocs = await Promise.all(friendPromises);
                 const friendData = friendDocs.map(doc => doc.data() as User);
@@ -63,12 +68,12 @@ export default function FriendsPage() {
     }, [currentUserProfileQuery, firestore]);
 
 
-    const handleRequest = async (requestId: string, newStatus: 'accepted' | 'rejected') => {
-        const requestRef = doc(firestore, 'friend_requests', requestId);
+    const handleRequest = async (request: any, newStatus: 'accepted' | 'rejected') => {
+        const requestRef = doc(firestore, 'friend_requests', request.id);
         try {
             if (newStatus === 'accepted') {
+                await addFriend(request.requesterId, request.receiverId);
                 await updateDoc(requestRef, { status: 'accepted' });
-                // Add to friends list for both users (omitted for brevity, requires transaction)
             } else {
                 await deleteDoc(requestRef);
             }
@@ -149,10 +154,10 @@ export default function FriendsPage() {
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button size="icon" variant="outline" className="text-green-500 hover:bg-green-500/10 hover:text-green-600" onClick={() => handleRequest(request.id, 'accepted')}>
+                                            <Button size="icon" variant="outline" className="text-green-500 hover:bg-green-500/10 hover:text-green-600" onClick={() => handleRequest(request, 'accepted')}>
                                                 <Check className="h-4 w-4" />
                                             </Button>
-                                            <Button size="icon" variant="outline" className="text-red-500 hover:bg-red-500/10 hover:text-red-600" onClick={() => handleRequest(request.id, 'rejected')}>
+                                            <Button size="icon" variant="outline" className="text-red-500 hover:bg-red-500/10 hover:text-red-600" onClick={() => handleRequest(request, 'rejected')}>
                                                 <X className="h-4 w-4" />
                                             </Button>
                                         </div>
