@@ -161,7 +161,7 @@ export default function SubmitInitiativePage() {
                     <FormItem>
                       <FormLabel>Website Domain</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Arise Africa Initiative" {...field} disabled={isSubmitting} />
+                        <Input placeholder="e.g., ariseafrica" {...field} disabled={isSubmitting} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
