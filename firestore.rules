@@ -1,66 +1,10 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if isOwner(userId);
-    }
-
-    match /global_posts/{postId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-      allow update(postId): if request.auth != null && resource.data.authorId == request.auth.uid;
-    }
-    
-    match /likes/{likeId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
-    }
-    
-    match /friend_requests/{friendRequestId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.requesterId || request.auth.uid == resource.data.receiverId);
-      allow create: if request.auth != null && request.resource.data.requesterId == request.auth.uid;
-      allow update: if request.auth != null && request.auth.uid == resource.data.receiverId;
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.requesterId || request.auth.uid == resource.data.receiverId);
-    }
-    
-    match /users/{userId}/chats/{chatId}/messages/{messageId} {
-        allow read, write: if request.auth != null; // Simplified for now
-    }
-    
-    match /calls/{callId} {
-       allow read, write: if request.auth != null;
-    }
-    
-    match /stories/{storyId} {
-       allow read, write: if request.auth != null;
-    }
-
-    match /initiatives/{initiativeId} {
-      allow read: if resource.data.status == 'approved';
-      allow create: if request.auth != null && request.resource.data.submittedBy == request.auth.uid;
-      allow update: if request.auth != null; // Allow logged in users to subscribe/unsubscribe
-      allow delete: if false;
-    }
-
-    match /initiatives/{initiativeId}/messages/{messageId} {
-      function isInitiativeOwner() {
-        return request.auth != null && get(/databases/$(database)/documents/initiatives/$(initiativeId)).data.submittedBy == request.auth.uid;
-      }
-      function isSubscriber() {
-        return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/initiatives/$(initiativeId)).data.subscribers;
-      }
-      allow read: if isInitiativeOwner() || isSubscriber();
-      allow create: if (isInitiativeOwner() || isSubscriber()) && request.resource.data.senderId == request.auth.uid;
+    // Allow read and write access to the entire database for any signed-in user.
+    // WARNING: This is insecure and should only be used for development and testing.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
-
-    
